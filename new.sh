@@ -1,0 +1,1 @@
+flutter test test/crypto_test.dart
