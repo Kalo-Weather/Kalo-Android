@@ -77,6 +77,12 @@ class DatabaseService {
   }
 
   // Location operations — stored in SharedPreferences (non-sensitive metadata)
+  Future<void> deleteLocation(int locationId) async {
+    final locations = await getAllLocations();
+    locations.removeWhere((l) => l.id == locationId);
+    await _saveLocations(locations);
+  }
+
   Future<void> addLocation(String name, double lat, double lon) async {
     final locations = await getAllLocations();
     final order = locations.isEmpty ? 0 : locations.map((l) => l.order).reduce((a, b) => a > b ? a : b) + 1;

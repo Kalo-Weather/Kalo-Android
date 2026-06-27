@@ -29,7 +29,7 @@ class HumidityCard extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           '${humidity.toStringAsFixed(0)}%',
-          style: const TextStyle(
+          style: TextStyle(
             color: KaloColors.primaryText,
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -38,7 +38,7 @@ class HumidityCard extends StatelessWidget {
         if (dewPoint != null)
           Text(
             'Dew: ${dewPoint!.toStringAsFixed(0)}°${dewPointUnit ?? ''}',
-            style: const TextStyle(
+            style: TextStyle(
               color: KaloColors.secondaryText,
               fontSize: 11,
             ),
@@ -55,14 +55,25 @@ class _DropletPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.6);
+    final center = Offset(size.width / 2, size.height * 0.55);
     final r = math.min(size.width, size.height) / 2 - 4;
     final path = Path()
       ..moveTo(center.dx, center.dy - r)
-      ..quadraticBezierTo(center.dx + r, center.dy - r * 0.2, center.dx + r * 0.7, center.dy + r * 0.3)
-      ..quadraticBezierTo(center.dx + r * 0.3, center.dy + r, center.dx, center.dy + r * 0.6)
-      ..quadraticBezierTo(center.dx - r * 0.3, center.dy + r, center.dx - r * 0.7, center.dy + r * 0.3)
-      ..quadraticBezierTo(center.dx - r, center.dy - r * 0.2, center.dx, center.dy - r)
+      ..cubicTo(
+        center.dx + r * 0.75, center.dy - r * 0.2,
+        center.dx + r, center.dy + r * 0.2,
+        center.dx + r * 0.45, center.dy + r * 0.55,
+      )
+      ..cubicTo(
+        center.dx + r * 0.2, center.dy + r * 0.85,
+        center.dx - r * 0.2, center.dy + r * 0.85,
+        center.dx - r * 0.45, center.dy + r * 0.55,
+      )
+      ..cubicTo(
+        center.dx - r, center.dy + r * 0.2,
+        center.dx - r * 0.75, center.dy - r * 0.2,
+        center.dx, center.dy - r,
+      )
       ..close();
 
     final bgPaint = Paint()

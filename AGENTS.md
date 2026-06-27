@@ -46,6 +46,17 @@ App won't start without `.env` — shows a config error screen if missing.
 | Analyze | `flutter analyze` |
 | Run tests | `flutter test` |
 
+> **Note**: After changes to Riverpod providers (especially `FutureProvider`s), use **full restart** (`R`) — hot reload (`r`) preserves cached provider state and new code won't take effect.
+## Dev commands
+
+| Task | Command |
+|------|---------|
+| Install deps | `flutter pub get` |
+| Run phone app | `flutter run` |
+| Run Wear OS | `flutter run -t lib/main_wear.dart` |
+| Analyze | `flutter analyze` |
+| Run tests | `flutter test` |
+
 - Analysis uses `package:flutter_lints/flutter.yaml` defaults — no custom rules
 - No CI workflows, no pre-commit hooks, no codegen, no build_runner
 - Two tests: `test/crypto_test.dart` (doesn't need `.env`) and `test/widget_test.dart` (needs `.env` present)
@@ -59,6 +70,15 @@ App won't start without `.env` — shows a config error screen if missing.
 - Sky background: `Container` with `BoxDecoration(gradient: SkyGradients.*)` — not a stack layer
 - `convertTemp()` / `tempUnit()` helpers in `weather_service.dart:78-84` for Celsius↔Fahrenheit
 - `WeatherCondition` enum with extension `.label` and `.isSevere` in `models/weather_condition.dart`
+
+## Radar
+
+- Uses `flutter_map` + `latlong2` with RainViewer tile overlay on CartoDB dark basemap
+- `radarFrameProvider` in `radar_service.dart` fetches RainViewer API and returns a tile URL template (`/256/{z}/{x}/{y}/2/1_1.png` suffix)
+- `RadarScreen` in `ui/radar/radar_screen.dart` is a full-screen `FlutterMap` centered on current GPS position
+- `RadarCard` on dashboard shows placeholder — no static radar preview image
+- No API key needed for RainViewer (public endpoint)
+- Full restart (`R`) required after code changes to `radarFrameProvider` (hot reload preserves cached FutureProvider value)
 
 ## Notable absences
 

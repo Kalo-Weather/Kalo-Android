@@ -34,7 +34,7 @@ class UVICard extends StatelessWidget {
                 children: [
                   Text(
                     '${uvIndex.value.toInt()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KaloColors.primaryText,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -52,7 +52,7 @@ class UVICard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     uvIndex.protectionTip,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: KaloColors.secondaryText,
                       fontSize: 9,
                     ),
@@ -94,8 +94,10 @@ class _UVSemiCirclePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0 || !centerY.isFinite) return;
     final center = Offset(size.width / 2, centerY);
-    final radius = math.min(size.width, centerY * 2) / 2 - 10;
+    final raw = math.min(size.width, centerY * 2) / 2 - 10;
+    final radius = raw.isFinite ? math.max(1.0, raw) : 1.0;
 
     final bgPaint = Paint()
       ..color = KaloColors.frostWhite

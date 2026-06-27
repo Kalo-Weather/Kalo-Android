@@ -10,10 +10,5 @@ final radarFrameProvider = FutureProvider<String?>((ref) async {
   final past = data['radar']['past'] as List<dynamic>;
   if (past.isEmpty) return null;
   final latest = past.last as Map<String, dynamic>;
-  return '$host${latest['path']}';
+  return '$host${latest['path']}/256/{z}/{x}/{y}/2/1_1.png';
 });
-
-String radarTileUrl(String frameUrl, int zoom, double lat, double lon, {int size = 256}) {
-  return '$frameUrl/$size/$zoom/$lat/$lon/2/1_1.png';
-}
-

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 import '../../theme/app_theme.dart';
 import '../../services/navigation_provider.dart';
 import '../../services/database_service.dart';
@@ -7,6 +8,12 @@ import '../../services/api_key_provider.dart';
 import '../../services/proxy_config.dart';
 import '../../services/device_service.dart';
 import '../../services/crypto_service.dart';
+import '../../services/location_service.dart';
+import '../../services/theme_provider.dart';
+import '../../services/animated_background_provider.dart';
+import '../../services/update_service.dart';
+import '../update/update_dialog.dart';
+import '../../models/weather_location.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -61,7 +68,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(label, style: const TextStyle(color: KaloColors.primaryText)),
+        title: Text(label, style: TextStyle(color: KaloColors.primaryText)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -73,19 +80,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             TextField(
               controller: controller,
               obscureText: true,
-              style: const TextStyle(color: KaloColors.primaryText),
+              style: TextStyle(color: KaloColors.primaryText),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: KaloColors.secondaryText),
+                hintStyle: TextStyle(color: KaloColors.secondaryText),
                 filled: true,
                 fillColor: KaloColors.frostWhite,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: KaloColors.frostBorder),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: KaloColors.frostBorder),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
                 ),
               ),
             ),
@@ -94,7 +101,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -118,11 +125,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Proxy Server', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text('Proxy Server', style: TextStyle(color: KaloColors.primaryText)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Use the public Kalo proxy or your own Vercel deployment.',
               style: TextStyle(color: KaloColors.secondaryText, fontSize: 13),
             ),
@@ -143,7 +150,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            const Row(
+            Row(
               children: [
                 Expanded(child: Divider(color: KaloColors.frostBorder)),
                 Padding(
@@ -156,19 +163,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _customUrlController,
-              style: const TextStyle(color: KaloColors.primaryText),
+              style: TextStyle(color: KaloColors.primaryText),
               decoration: InputDecoration(
                 hintText: 'https://kalo-vercel.vercel.app',
-                hintStyle: const TextStyle(color: KaloColors.secondaryText),
+                hintStyle: TextStyle(color: KaloColors.secondaryText),
                 filled: true,
                 fillColor: KaloColors.frostWhite,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: KaloColors.frostBorder),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: KaloColors.frostBorder),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
                 ),
               ),
             ),
@@ -177,7 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -192,10 +199,166 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showAddLocationDialog() {
+    final searchController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Add Location', style: TextStyle(color: KaloColors.primaryText)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Search for a city or use your current location.',
+              style: TextStyle(color: KaloColors.secondaryText, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: searchController,
+              style: TextStyle(color: KaloColors.primaryText),
+              decoration: InputDecoration(
+                hintText: 'City name',
+                hintStyle: TextStyle(color: KaloColors.secondaryText),
+                filled: true,
+                fillColor: KaloColors.frostWhite,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: KaloColors.frostBorder),
+                ),
+              ),
+              onSubmitted: (_) => _searchAndAddLocation(searchController.text, ctx),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _addCurrentLocation();
+                },
+                icon: const Icon(Icons.gps_fixed, size: 18),
+                label: const Text('Use Current Location'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+          ),
+          ElevatedButton(
+            onPressed: () => _searchAndAddLocation(searchController.text, ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+            child: const Text('Search'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _searchAndAddLocation(String query, BuildContext dialogContext) async {
+    if (query.trim().isEmpty) return;
+    Navigator.pop(dialogContext);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+
+    try {
+      final results = await geo.locationFromAddress(query);
+      if (results.isEmpty) {
+        if (mounted) Navigator.pop(context);
+        _showError('Location not found');
+        return;
+      }
+
+      final loc = results.first;
+      final placemarks = await geo.placemarkFromCoordinates(loc.latitude, loc.longitude);
+      final name = placemarks.isNotEmpty
+          ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? query)
+          : query;
+
+      final db = ref.read(databaseServiceProvider);
+      await db.addLocation(name, loc.latitude, loc.longitude);
+      ref.invalidate(allLocationsProvider);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      _showError('Could not find location: $e');
+    }
+  }
+
+  Future<void> _addCurrentLocation() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+
+    try {
+      final service = ref.read(locationServiceProvider);
+      final hasPermission = await service.requestPermission();
+      if (!hasPermission) {
+        if (mounted) Navigator.pop(context);
+        _showError('Location permission denied');
+        return;
+      }
+
+      final position = await service.getCurrentLocation();
+      if (position == null) {
+        if (mounted) Navigator.pop(context);
+        _showError('Could not get current location');
+        return;
+      }
+
+      final placemarks = await geo.placemarkFromCoordinates(position.latitude, position.longitude);
+      final name = placemarks.isNotEmpty
+          ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? 'Current Location')
+          : 'Current Location';
+
+      final db = ref.read(databaseServiceProvider);
+      await db.addLocation(name, position.latitude, position.longitude);
+      ref.invalidate(allLocationsProvider);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      _showError('Error: $e');
+    }
+  }
+
+  Future<void> _deleteLocation(WeatherLocation loc) async {
+    final db = ref.read(databaseServiceProvider);
+    await db.deleteLocation(loc.id!);
+    ref.invalidate(allLocationsProvider);
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red.shade800),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final paradigm = ref.watch(navigationParadigmProvider);
+    final themeMode = ref.watch(themeModeProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
+    final currentAppVersion = ref.watch(currentVersionProvider).valueOrNull ?? '?';
     final locationsAsync = ref.watch(allLocationsProvider);
     final proxyUrl = ref.watch(proxyBaseUrlProvider);
     final apiKeysAsync = ref.watch(apiKeysProvider);
@@ -206,10 +369,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: KaloColors.primaryText),
+          icon: Icon(Icons.arrow_back, color: KaloColors.primaryText),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Settings', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text('Settings', style: TextStyle(color: KaloColors.primaryText)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -240,17 +403,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                const Icon(Icons.thermostat_outlined, color: KaloColors.secondaryText, size: 20),
+                Icon(Icons.thermostat_outlined, color: KaloColors.secondaryText, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text('Temperature', style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
                 ),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: unitPref,
-                    icon: const Icon(Icons.expand_more, color: KaloColors.secondaryText),
+                    icon: Icon(Icons.expand_more, color: KaloColors.secondaryText),
                     dropdownColor: const Color(0xFF1C1C2E),
-                    style: const TextStyle(color: KaloColors.primaryText, fontSize: 14),
+                    style: TextStyle(color: KaloColors.primaryText, fontSize: 14),
                     items: const [
                       DropdownMenuItem(value: 'Celsius', child: Text('Celsius')),
                       DropdownMenuItem(value: 'Fahrenheit', child: Text('Fahrenheit')),
@@ -264,6 +427,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          _SectionHeader(title: 'Theme'),
+          const SizedBox(height: 8),
+          _buildChoiceChip(
+            label: 'Light',
+            subtitle: 'Light background',
+            selected: themeMode == ThemeMode.light,
+            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.light),
+          ),
+          const SizedBox(height: 8),
+          _buildChoiceChip(
+            label: 'Dark',
+            subtitle: 'Dark background',
+            selected: themeMode == ThemeMode.dark,
+            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.dark),
+          ),
+          const SizedBox(height: 8),
+          _buildChoiceChip(
+            label: 'System',
+            subtitle: 'Follow device settings',
+            selected: themeMode == ThemeMode.system,
+            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.system),
+          ),
+          const SizedBox(height: 24),
+          _SectionHeader(title: 'Display'),
+          const SizedBox(height: 8),
+          _buildToggleTile(
+            icon: Icons.animation_outlined,
+            label: 'Animated Background',
+            subtitle: 'Weather animations on dashboard (disable if laggy)',
+            value: ref.watch(animatedBackgroundProvider),
+            onChanged: (val) => ref.read(animatedBackgroundProvider.notifier).set(val),
           ),
           const SizedBox(height: 24),
           _SectionHeader(title: 'API Keys'),
@@ -312,24 +508,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: _showProxyDialog,
           ),
           const SizedBox(height: 24),
+          _SectionHeader(title: 'Updates'),
+          const SizedBox(height: 8),
+          _buildTile(
+            icon: Icons.system_update_outlined,
+            label: 'Check for Updates',
+            subtitle: 'v$currentAppVersion',
+            onTap: _checkForUpdates,
+          ),
+          const SizedBox(height: 24),
           _SectionHeader(title: 'Saved Locations'),
           const SizedBox(height: 8),
           locationsAsync.when(
-            data: (locations) => locations.isEmpty
-                ? const Padding(
+            data: (locations) => Column(
+              children: [
+                _buildTile(
+                  icon: Icons.add_location_outlined,
+                  label: 'Add Location',
+                  subtitle: 'Search city or use current location',
+                  onTap: _showAddLocationDialog,
+                ),
+                const SizedBox(height: 8),
+                if (locations.isEmpty)
+                  Padding(
                     padding: EdgeInsets.all(16),
                     child: Text('No saved locations', style: TextStyle(color: KaloColors.secondaryText)),
                   )
-                : Column(
-                    children: locations.map((loc) => ListTile(
-                      leading: const Icon(Icons.location_city, color: KaloColors.secondaryText),
-                      title: Text(loc.name, style: const TextStyle(color: KaloColors.primaryText)),
-                      subtitle: Text(
-                        '${loc.latitude.toStringAsFixed(2)}, ${loc.longitude.toStringAsFixed(2)}',
-                        style: const TextStyle(color: KaloColors.secondaryText, fontSize: 12),
-                      ),
-                    )).toList(),
-                  ),
+                else
+                  ...locations.map((loc) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildLocationTile(loc),
+                  )),
+              ],
+            ),
             loading: () => const SizedBox(height: 32, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
             error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
           ),
@@ -359,7 +570,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Icon(icon, color: KaloColors.primaryText, size: 22),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: const TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(label, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -386,6 +597,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _checkForUpdates() async {
+    ref.invalidate(updateInfoProvider);
+    final update = await ref.read(updateInfoProvider.future);
+    if (!mounted) return;
+    if (update == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not check for updates'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    final current = await ref.read(currentVersionProvider.future);
+    if (!mounted) return;
+    if (isNewerVersion(update.version, current)) {
+      UpdateDialog.show(context, update, current);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Already up to date (v$current)'), backgroundColor: Colors.green.shade700),
+      );
+    }
+  }
+
   Widget _buildTile({
     required IconData icon,
     required String label,
@@ -410,13 +642,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(label, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
+                  Text(subtitle, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: KaloColors.secondaryText, size: 20),
+            Icon(Icons.chevron_right, color: KaloColors.secondaryText, size: 20),
           ],
         ),
       ),
@@ -448,15 +680,77 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(label, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: KaloColors.secondaryText, fontSize: 13)),
+                  Text(subtitle, style: TextStyle(color: KaloColors.secondaryText, fontSize: 13)),
                 ],
               ),
             ),
             if (selected) const Icon(Icons.check, color: Colors.white, size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildToggleTile({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: KaloColors.frostWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: KaloColors.frostBorder, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: KaloColors.primaryText, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationTile(WeatherLocation loc) {
+    return Container(
+      decoration: BoxDecoration(
+        color: KaloColors.frostWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: KaloColors.frostBorder, width: 1),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.location_city, color: KaloColors.secondaryText),
+        title: Text(loc.name, style: TextStyle(color: KaloColors.primaryText)),
+        subtitle: Text(
+          '${loc.latitude.toStringAsFixed(2)}, ${loc.longitude.toStringAsFixed(2)}',
+          style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () => _deleteLocation(loc),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -471,7 +765,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: KaloColors.secondaryText,
         fontSize: 13,
         fontWeight: FontWeight.w600,

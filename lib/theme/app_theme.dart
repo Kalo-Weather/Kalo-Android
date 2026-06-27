@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 class KaloColors {
-  static const Color amoledDark = Color(0xFF000000);
-  static const Color frostWhite = Color(0x1AFFFFFF);
-  static const Color frostBorder = Color(0x26FFFFFF);
-  static const Color primaryText = Color(0xFFFFFFFF);
-  static const Color secondaryText = Color(0x99FFFFFF);
-  static const Color frostFill = Color(0x1AFFFFFF);
+  static Color amoledDark = const Color(0xFF000000);
+  static Color frostWhite = const Color(0x1AFFFFFF);
+  static Color frostBorder = const Color(0x26FFFFFF);
+  static Color primaryText = const Color(0xFFFFFFFF);
+  static Color secondaryText = const Color(0x99FFFFFF);
+  static Color frostFill = const Color(0x1AFFFFFF);
+
+  static void applyDark() {
+    amoledDark = const Color(0xFF000000);
+    frostWhite = const Color(0x1AFFFFFF);
+    frostBorder = const Color(0x26FFFFFF);
+    primaryText = const Color(0xFFFFFFFF);
+    secondaryText = const Color(0x99FFFFFF);
+    frostFill = const Color(0x1AFFFFFF);
+  }
+
+  static void applyLight() {
+    amoledDark = const Color(0xFFF5F5F5);
+    frostWhite = const Color(0x1A000000);
+    frostBorder = const Color(0x26000000);
+    primaryText = const Color(0xFF1A1A2E);
+    secondaryText = const Color(0x991A1A2E);
+    frostFill = const Color(0x1A000000);
+  }
 }
 
 class SkyGradients {
@@ -74,11 +91,14 @@ class FrostedGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return Container(
       margin: margin,
+      decoration: BoxDecoration(
+        color: const Color(0x40000000),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: KaloColors.frostBorder),
+      ),
       padding: padding ?? const EdgeInsets.all(16),
-      shape: const LiquidRoundedSuperellipse(borderRadius: 20),
-      useOwnLayer: true,
       clipBehavior: Clip.antiAlias,
       child: child,
     );

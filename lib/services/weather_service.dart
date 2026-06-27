@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/hourly_forecast.dart';
+import '../models/daily_forecast.dart';
 import '../models/weather_condition.dart';
 import '../models/uv_index.dart';
 import '../models/wind_data.dart';
@@ -18,6 +19,7 @@ class WeatherData {
   final UVIndex uvIndex;
   final AirQuality aqi;
   final List<HourlyForecast> hourlyForecast;
+  final List<DailyForecast> dailyForecast;
 
   WeatherData({
     required this.temperature,
@@ -30,6 +32,7 @@ class WeatherData {
     required this.uvIndex,
     required this.aqi,
     required this.hourlyForecast,
+    required this.dailyForecast,
   });
 }
 
@@ -54,6 +57,13 @@ WeatherData _proxyToWeatherData(ProxyWeatherResponse proxy) {
     weatherCode: _labelToWmoCode(h.condition),
   )).toList();
 
+  final daily = proxy.forecast.daily.map((d) => DailyForecast(
+    time: DateTime.fromMillisecondsSinceEpoch(d.time * 1000),
+    min: d.min,
+    max: d.max,
+    weatherCode: _labelToWmoCode(d.condition),
+  )).toList();
+
   return WeatherData(
     temperature: proxy.current.temp,
     apparentTemperature: proxy.current.feelsLike,
@@ -72,6 +82,7 @@ WeatherData _proxyToWeatherData(ProxyWeatherResponse proxy) {
       dominantPollutant: 'PM2.5',
     ),
     hourlyForecast: forecast,
+    dailyForecast: daily,
   );
 }
 

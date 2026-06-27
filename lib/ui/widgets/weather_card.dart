@@ -44,7 +44,7 @@ class WeatherCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KaloColors.secondaryText,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

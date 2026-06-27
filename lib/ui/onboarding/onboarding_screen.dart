@@ -6,7 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../services/navigation_provider.dart';
 import '../../services/database_service.dart';
 import '../../models/weather_condition.dart';
-import '../widgets/weather_illustration.dart';
+import '../../weather_icons/weather_icons.dart';
+import '../../weather_icons/boxed_icon.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -55,7 +56,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     children: [
                       if (_currentStep > 0)
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: KaloColors.primaryText),
+                          icon: Icon(Icons.arrow_back, color: KaloColors.primaryText),
                           onPressed: () => _pageController.previousPage(
                             duration: const Duration(milliseconds: 400),
                             curve: Curves.easeInOut,
@@ -64,7 +65,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       const Spacer(),
                       TextButton(
                         onPressed: _completeOnboarding,
-                        child: const Text('Skip', style: TextStyle(color: KaloColors.secondaryText)),
+                        child: Text('Skip', style: TextStyle(color: KaloColors.secondaryText)),
                       ),
                     ],
                   ),
@@ -102,9 +103,9 @@ class _WelcomeStep extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const WeatherIllustration(condition: WeatherCondition.clearSky, isDay: true, size: 150),
+          const BoxedIcon(WeatherIcons.day_sunny, size: 150, color: Colors.white),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Kalo Weather',
             style: TextStyle(
               color: KaloColors.primaryText,
@@ -113,7 +114,7 @@ class _WelcomeStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Beautiful weather tracking with privacy at its core.\nNo ads. No trackers. Just weather.',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 16, height: 1.5),
             textAlign: TextAlign.center,
@@ -167,14 +168,14 @@ class _PrivacyStepState extends ConsumerState<_PrivacyStep> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.privacy_tip_outlined, color: KaloColors.primaryText, size: 80),
+          Icon(Icons.privacy_tip_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Your Privacy Matters',
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Kalo has zero telemetry, no ads, and no trackers.\nYour data stays on your device.',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
@@ -197,7 +198,7 @@ class _PrivacyStepState extends ConsumerState<_PrivacyStep> {
           const SizedBox(height: 12),
           TextButton(
             onPressed: widget.onNext,
-            child: const Text('Maybe Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text('Maybe Later', style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ],
       ),
@@ -217,14 +218,14 @@ class _KeyCreationStep extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.vpn_key_outlined, color: KaloColors.primaryText, size: 80),
+          Icon(Icons.vpn_key_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Your Private Key',
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Kalo generates a unique encryption key tied to your device.\nYour API keys are encrypted locally and never leave your phone.',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
@@ -257,14 +258,14 @@ class _ApiSelectionStep extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.api_outlined, color: KaloColors.primaryText, size: 80),
+          Icon(Icons.api_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Weather Data Source',
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Use the free Open-Meteo API with no key needed, or add your own API keys for additional providers.',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
@@ -282,7 +283,7 @@ class _ApiSelectionStep extends StatelessWidget {
           const SizedBox(height: 12),
           TextButton(
             onPressed: onNext,
-            child: const Text('Configure Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text('Configure Later', style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ],
       ),
@@ -304,12 +305,12 @@ class _GestureCustomizationStep extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
+          Text(
             'Choose Your Navigation',
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'How would you like to navigate through locations and weather data?',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
@@ -384,9 +385,9 @@ class _ParadigmOption extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(title, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text(description, style: const TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
+                  Text(description, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
                 ],
               ),
             ),

@@ -14,7 +14,7 @@ class RadarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: frameUrl != null ? onTap : null,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         width: double.infinity,
@@ -23,43 +23,26 @@ class RadarCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           color: const Color(0xFF1A1A2E),
         ),
-        child: frameUrl != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  frameUrl!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Text(
-                      'Radar unavailable',
-                      style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
-                    ),
-                  ),
-                ),
-              )
-            : const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.radar, color: KaloColors.secondaryText, size: 28),
-                    SizedBox(height: 4),
-                    Text(
-                      'Precipitation',
-                      style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
-                    ),
-                    Text(
-                      'Tap to view',
-                      style: TextStyle(color: KaloColors.secondaryText, fontSize: 10),
-                    ),
-                  ],
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.radar, color: KaloColors.secondaryText, size: 28),
+              const SizedBox(height: 4),
+              Text(
+                'Radar',
+                style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
+              ),
+              Text(
+                frameUrl != null ? 'Tap to view' : 'Unavailable',
+                style: TextStyle(
+                  color: frameUrl != null ? KaloColors.primaryText : KaloColors.secondaryText,
+                  fontSize: 10,
                 ),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }

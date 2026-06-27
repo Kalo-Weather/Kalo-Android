@@ -18,7 +18,7 @@ class AQICard extends StatelessWidget {
       children: [
         Text(
           '${airQuality.index.toInt()}',
-          style: const TextStyle(
+          style: TextStyle(
             color: KaloColors.primaryText,
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class AQICard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           airQuality.dominantPollutant,
-          style: const TextStyle(
+          style: TextStyle(
             color: KaloColors.secondaryText,
             fontSize: 10,
           ),

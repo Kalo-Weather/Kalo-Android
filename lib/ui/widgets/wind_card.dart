@@ -32,7 +32,7 @@ class WindCompassCard extends StatelessWidget {
             children: [
               Text(
                 '${wind.speed.toStringAsFixed(0)} km/h',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KaloColors.primaryText,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -41,7 +41,7 @@ class WindCompassCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${wind.directionLabel} ${wind.direction.toStringAsFixed(0)}°',
-                style: const TextStyle(
+                style: TextStyle(
                   color: KaloColors.secondaryText,
                   fontSize: 13,
                 ),
@@ -49,7 +49,7 @@ class WindCompassCard extends StatelessWidget {
               if (wind.gust != null)
                 Text(
                   'Gusts: ${wind.gust!.toStringAsFixed(0)} km/h',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: KaloColors.secondaryText,
                     fontSize: 12,
                   ),

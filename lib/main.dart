@@ -12,6 +12,10 @@ import 'services/device_service.dart';
 import 'services/navigation_provider.dart';
 import 'services/proxy_config.dart';
 import 'services/config_status.dart';
+import 'services/theme_provider.dart';
+import 'services/notification_service.dart';
+import 'services/update_service.dart';
+import 'ui/update/update_dialog.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -31,6 +35,9 @@ void main() async {
   final deviceService = DeviceService();
   await deviceService.ensureFingerprintEntropy();
 
+  final notificationService = NotificationService();
+  await notificationService.init();
+
   final initialUnit = await _detectInitialUnit();
 
   runApp(
@@ -39,6 +46,7 @@ void main() async {
         onboardingCompletedProvider.overrideWith((ref) => onboardingCompleted),
         databaseServiceProvider.overrideWithValue(dbService),
         deviceServiceProvider.overrideWithValue(deviceService),
+        notificationServiceProvider.overrideWithValue(notificationService),
         configStatusProvider.overrideWith((ref) => envStatus),
         unitPreferenceProvider.overrideWith((ref) => initialUnit),
       ],
@@ -79,12 +87,24 @@ class _KaloAppState extends ConsumerState<KaloApp> {
   void initState() {
     super.initState();
     ref.read(proxyBaseUrlProvider.notifier).load();
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    final update = await ref.read(updateInfoProvider.future);
+    if (update == null || !mounted) return;
+    final current = await ref.read(currentVersionProvider.future);
+    if (!mounted) return;
+    if (isNewerVersion(update.version, current)) {
+      UpdateDialog.show(context, update, current);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final onboardingCompleted = ref.watch(onboardingCompletedProvider);
     final configStatus = ref.watch(configStatusProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     if (configStatus == ConfigStatus.missingEnv) {
       return MaterialApp(
@@ -96,6 +116,14 @@ class _KaloAppState extends ConsumerState<KaloApp> {
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        final isDark = themeMode == ThemeMode.dark ||
+            (themeMode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+        if (isDark) {
+          KaloColors.applyDark();
+        } else {
+          KaloColors.applyLight();
+        }
+
         return MaterialApp(
           title: 'Kalo Weather',
           debugShowCheckedModeBanner: false,
@@ -103,7 +131,7 @@ class _KaloAppState extends ConsumerState<KaloApp> {
             useMaterial3: true,
             colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue),
             brightness: Brightness.light,
-            scaffoldBackgroundColor: Colors.white,
+            scaffoldBackgroundColor: const Color(0xFFF5F5F5),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
@@ -111,7 +139,7 @@ class _KaloAppState extends ConsumerState<KaloApp> {
             brightness: Brightness.dark,
             scaffoldBackgroundColor: KaloColors.amoledDark,
           ),
-          themeMode: ThemeMode.system,
+          themeMode: themeMode,
           home: onboardingCompleted ? const DashboardScreen() : const OnboardingScreen(),
         );
       },
@@ -132,13 +160,13 @@ class _ConfigErrorScreen extends StatelessWidget {
             children: [
               const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 64),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Configuration file not found',
                 style: TextStyle(color: KaloColors.primaryText, fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Create a .env file in the project root.\nSee .env.example for the required variables.',
                 style: TextStyle(color: KaloColors.secondaryText, fontSize: 14, height: 1.5),
                 textAlign: TextAlign.center,
