@@ -9,23 +9,7 @@ class KaloColors {
   static Color secondaryText = const Color(0x99FFFFFF);
   static Color frostFill = const Color(0x1AFFFFFF);
 
-  static void applyDark() {
-    amoledDark = const Color(0xFF000000);
-    frostWhite = const Color(0x1AFFFFFF);
-    frostBorder = const Color(0x26FFFFFF);
-    primaryText = const Color(0xFFFFFFFF);
-    secondaryText = const Color(0x99FFFFFF);
-    frostFill = const Color(0x1AFFFFFF);
-  }
 
-  static void applyLight() {
-    amoledDark = const Color(0xFFF5F5F5);
-    frostWhite = const Color(0x1A000000);
-    frostBorder = const Color(0x26000000);
-    primaryText = const Color(0xFF1A1A2E);
-    secondaryText = const Color(0x991A1A2E);
-    frostFill = const Color(0x1A000000);
-  }
 }
 
 class SkyGradients {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_small_desc">Current temperature and conditions</string>
+    <string name="widget_medium_desc">Current conditions with hourly forecast</string>
+    <string name="widget_large_desc">Full weather details with extended forecast</string>
+</resources>

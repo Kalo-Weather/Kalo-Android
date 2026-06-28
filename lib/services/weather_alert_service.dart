@@ -50,7 +50,7 @@ final weatherAlertsProvider = FutureProvider<List<WeatherAlert>>((ref) async {
       },
     );
     final res = await http.get(uri, headers: {
-      'User-Agent': 'Kalo Weather App, contact ngbcoder@gmail.com',
+      'User-Agent': 'Kalo Weather App (github.com/Kalo-Weather/Kalo-Android)',
       'Accept': 'application/geo+json',
     });
     if (res.statusCode != 200) return [];

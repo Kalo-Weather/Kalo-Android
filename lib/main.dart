@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:home_widget/home_widget.dart';
 import 'ui/onboarding/onboarding_screen.dart';
 import 'ui/dashboard/dashboard_screen.dart';
 import 'services/database_service.dart';
@@ -12,10 +13,13 @@ import 'services/device_service.dart';
 import 'services/navigation_provider.dart';
 import 'services/proxy_config.dart';
 import 'services/config_status.dart';
-import 'services/theme_provider.dart';
+
 import 'services/notification_service.dart';
 import 'services/update_service.dart';
+import 'services/widget_service.dart';
+import 'services/weather_service.dart';
 import 'ui/update/update_dialog.dart';
+import 'models/weather_condition.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -39,6 +43,8 @@ void main() async {
   await notificationService.init();
 
   final initialUnit = await _detectInitialUnit();
+
+  HomeWidget.registerInteractivityCallback(WidgetService.widgetCallback);
 
   runApp(
     ProviderScope(
@@ -102,10 +108,42 @@ class _KaloAppState extends ConsumerState<KaloApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(currentWeatherProvider, (prev, next) {
+      next.whenData((weather) async {
+        if (weather == null) return;
+        final enabled = ref.read(widgetRefreshEnabledProvider);
+        if (!enabled) return;
+        final unitPref = ref.read(unitPreferenceProvider);
+        WidgetService.updateWeatherWidget(
+          temperatureCelsius: weather.temperature,
+          feelsLikeCelsius: weather.apparentTemperature,
+          condition: weather.condition,
+          locationName: 'My Location',
+          unitPref: unitPref,
+          hourlyForecast: weather.hourlyForecast,
+          dailyForecast: weather.dailyForecast,
+          humidity: weather.humidity,
+          windSpeed: weather.wind.speed,
+          uvIndex: weather.uvIndex.value,
+          aqi: weather.aqi.index.toInt(),
+        );
+        final nowBarEnabled = ref.read(nowBarEnabledProvider);
+        if (nowBarEnabled) {
+          final temp = convertTemp(weather.temperature, unitPref);
+          final label = tempUnit(unitPref);
+          final notificationService = ref.read(notificationServiceProvider);
+          await notificationService.showNowBarWeather(
+            temp: '$temp°$label',
+            emoji: weather.condition.emoji,
+            location: 'My Location',
+            condition: weather.condition.label,
+          );
+        }
+      });
+    });
+
     final onboardingCompleted = ref.watch(onboardingCompletedProvider);
     final configStatus = ref.watch(configStatusProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
     if (configStatus == ConfigStatus.missingEnv) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -116,14 +154,6 @@ class _KaloAppState extends ConsumerState<KaloApp> {
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        final isDark = themeMode == ThemeMode.dark ||
-            (themeMode == ThemeMode.system && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
-        if (isDark) {
-          KaloColors.applyDark();
-        } else {
-          KaloColors.applyLight();
-        }
-
         return MaterialApp(
           title: 'Kalo Weather',
           debugShowCheckedModeBanner: false,
@@ -139,7 +169,7 @@ class _KaloAppState extends ConsumerState<KaloApp> {
             brightness: Brightness.dark,
             scaffoldBackgroundColor: KaloColors.amoledDark,
           ),
-          themeMode: themeMode,
+          themeMode: ThemeMode.dark,
           home: onboardingCompleted ? const DashboardScreen() : const OnboardingScreen(),
         );
       },

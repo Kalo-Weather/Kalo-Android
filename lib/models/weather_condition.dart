@@ -10,6 +10,23 @@ enum WeatherCondition {
 extension WeatherConditionExtension on WeatherCondition {
   bool get isSevere => this == WeatherCondition.stormy;
 
+  String get emoji {
+    switch (this) {
+      case WeatherCondition.clearSky:
+        return '\u2600\uFE0F';
+      case WeatherCondition.cloudy:
+        return '\u2601\uFE0F';
+      case WeatherCondition.foggy:
+        return '\uD83C\uDF2B\uFE0F';
+      case WeatherCondition.rainy:
+        return '\uD83C\uDF27\uFE0F';
+      case WeatherCondition.snowy:
+        return '\u2744\uFE0F';
+      case WeatherCondition.stormy:
+        return '\u26C8\uFE0F';
+    }
+  }
+
   String get label {
     switch (this) {
       case WeatherCondition.clearSky:

@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 import '../../theme/app_theme.dart';
 import '../../services/navigation_provider.dart';
 import '../../services/database_service.dart';
-import '../../models/weather_condition.dart';
 import '../../weather_icons/weather_icons.dart';
 import '../../weather_icons/boxed_icon.dart';
 import '../dashboard/dashboard_screen.dart';

@@ -1,4 +1,4 @@
-name: build
+name: CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  analyze:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,10 +17,27 @@ jobs:
           flutter-version: stable
       - run: flutter pub get
       - run: flutter analyze
+
+  test:
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+      - run: flutter pub get
+      - name: Create .env for tests
+        run: |
+          cat > .env << EOF
+          KALO_CLIENT_SECRET=test
+          KALO_PROXY_BASE_URL=
+          KALO_DECRYPTION_SECRET=
+          EOF
       - run: flutter test
 
   build:
-    needs: check
+    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

@@ -13,6 +13,10 @@ class NotificationService {
   static const String _alertChannelId = 'weather_alerts';
   static const String _alertChannelName = 'Weather Alerts';
   static const String _alertChannelDescription = 'Severe weather alerts for your location';
+  static const String _nowBarChannelId = 'weather_now_bar';
+  static const String _nowBarChannelName = 'Now Bar';
+  static const String _nowBarChannelDescription = 'Weather info on lock screen Now Bar';
+  static const int _nowBarNotificationId = 9999;
 
   final Set<int> _notifiedAlertIds = {};
 
@@ -45,6 +49,16 @@ class NotificationService {
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
+        ),
+      );
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _nowBarChannelId,
+          _nowBarChannelName,
+          description: _nowBarChannelDescription,
+          importance: Importance.low,
+          playSound: false,
+          enableVibration: false,
         ),
       );
     }
@@ -84,6 +98,46 @@ class NotificationService {
       id: id,
       title: title,
       body: body,
+      notificationDetails: details,
+    );
+  }
+
+  Future<void> showNowBarWeather({
+    required String temp,
+    required String emoji,
+    required String location,
+    required String condition,
+  }) async {
+    if (!_initialized) return;
+
+    final androidDetails = AndroidNotificationDetails(
+      _nowBarChannelId,
+      _nowBarChannelName,
+      channelDescription: _nowBarChannelDescription,
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+      autoCancel: false,
+      showWhen: true,
+      usesChronometer: false,
+      color: const Color(0xFFFF6B35),
+      icon: '@mipmap/ic_launcher',
+      category: AndroidNotificationCategory.status,
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: false,
+      presentSound: false,
+    );
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _plugin.show(
+      id: _nowBarNotificationId,
+      title: '$temp $emoji',
+      body: '$location — $condition',
       notificationDetails: details,
     );
   }

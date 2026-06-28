@@ -83,6 +83,14 @@ class DatabaseService {
     await _saveLocations(locations);
   }
 
+  Future<void> updateLocation(WeatherLocation updated) async {
+    final locations = await getAllLocations();
+    final idx = locations.indexWhere((l) => l.id == updated.id);
+    if (idx == -1) return;
+    locations[idx] = updated;
+    await _saveLocations(locations);
+  }
+
   Future<void> addLocation(String name, double lat, double lon) async {
     final locations = await getAllLocations();
     final order = locations.isEmpty ? 0 : locations.map((l) => l.order).reduce((a, b) => a > b ? a : b) + 1;

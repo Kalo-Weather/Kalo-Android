@@ -9,10 +9,12 @@ import '../../services/proxy_config.dart';
 import '../../services/device_service.dart';
 import '../../services/crypto_service.dart';
 import '../../services/location_service.dart';
-import '../../services/theme_provider.dart';
+
 import '../../services/animated_background_provider.dart';
 import '../../services/update_service.dart';
+import '../../services/widget_service.dart';
 import '../update/update_dialog.dart';
+import '../widget_editor/widget_editor_screen.dart';
 import '../../models/weather_location.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -356,7 +358,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final paradigm = ref.watch(navigationParadigmProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
     final currentAppVersion = ref.watch(currentVersionProvider).valueOrNull ?? '?';
     final locationsAsync = ref.watch(allLocationsProvider);
@@ -429,29 +430,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Theme'),
-          const SizedBox(height: 8),
-          _buildChoiceChip(
-            label: 'Light',
-            subtitle: 'Light background',
-            selected: themeMode == ThemeMode.light,
-            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.light),
-          ),
-          const SizedBox(height: 8),
-          _buildChoiceChip(
-            label: 'Dark',
-            subtitle: 'Dark background',
-            selected: themeMode == ThemeMode.dark,
-            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.dark),
-          ),
-          const SizedBox(height: 8),
-          _buildChoiceChip(
-            label: 'System',
-            subtitle: 'Follow device settings',
-            selected: themeMode == ThemeMode.system,
-            onTap: () => ref.read(themeModeProvider.notifier).set(ThemeMode.system),
-          ),
-          const SizedBox(height: 24),
           _SectionHeader(title: 'Display'),
           const SizedBox(height: 8),
           _buildToggleTile(
@@ -460,6 +438,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: 'Weather animations on dashboard (disable if laggy)',
             value: ref.watch(animatedBackgroundProvider),
             onChanged: (val) => ref.read(animatedBackgroundProvider.notifier).set(val),
+          ),
+          const SizedBox(height: 8),
+          _buildTile(
+            icon: Icons.dashboard_customize_outlined,
+            label: 'Customize Widgets',
+            subtitle: 'Drag, reorder, and toggle blocks per widget size',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WidgetEditorScreen())),
+          ),
+          const SizedBox(height: 8),
+          _buildToggleTile(
+            icon: Icons.widgets_outlined,
+            label: 'Auto-Refresh Widgets',
+            subtitle: 'Update widgets when weather refreshes',
+            value: ref.watch(widgetRefreshEnabledProvider),
+            onChanged: (val) => ref.read(widgetRefreshEnabledProvider.notifier).state = val,
+          ),
+          const SizedBox(height: 8),
+          _buildToggleTile(
+            icon: Icons.lock_outline,
+            label: 'Now Bar (One UI 6+)',
+            subtitle: 'Show weather on Samsung lock screen Now Bar',
+            value: ref.watch(nowBarEnabledProvider),
+            onChanged: (val) => ref.read(nowBarEnabledProvider.notifier).state = val,
           ),
           const SizedBox(height: 24),
           _SectionHeader(title: 'API Keys'),
@@ -746,13 +747,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           '${loc.latitude.toStringAsFixed(2)}, ${loc.longitude.toStringAsFixed(2)}',
           style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-          onPressed: () => _deleteLocation(loc),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
+              onPressed: () => _renameLocation(loc),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+              onPressed: () => _deleteLocation(loc),
+            ),
+          ],
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+  }
+
+  Future<void> _renameLocation(WeatherLocation loc) async {
+    final controller = TextEditingController(text: loc.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Rename Location', style: TextStyle(color: KaloColors.primaryText)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: KaloColors.primaryText),
+          decoration: InputDecoration(
+            hintText: 'Location name',
+            hintStyle: TextStyle(color: KaloColors.secondaryText),
+            filled: true,
+            fillColor: KaloColors.frostWhite,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: KaloColors.frostBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: KaloColors.frostBorder),
+            ),
+          ),
+          onSubmitted: (val) => Navigator.pop(ctx, val.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName == null || newName.isEmpty || newName == loc.name) return;
+    final db = ref.read(databaseServiceProvider);
+    await db.updateLocation(WeatherLocation(
+      id: loc.id,
+      name: newName,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      order: loc.order,
+    ));
+    ref.invalidate(allLocationsProvider);
   }
 }
 

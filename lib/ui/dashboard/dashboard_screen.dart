@@ -328,7 +328,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _showLocationError('Location permission denied');
           return;
         }
-        final position = await service.getCurrentLocation();
+        final position = await service.getCurrentLocation().timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => null,
+        );
         if (position == null) {
           if (mounted) Navigator.pop(context);
           _showLocationError('Could not get current location');
@@ -675,7 +678,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Proxy unavailable — contact ngbcoder@gmail.com',
+              'Proxy unavailable — using direct API fallback',
               style: const TextStyle(color: Colors.white, fontSize: 12),
             ),
           ),
@@ -831,7 +834,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'Contact ngbcoder@gmail.com for support',
+                  'Report issues at github.com/Kalo-Weather/Kalo-Android/issues',
                   style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
                 ),
               ),
@@ -860,6 +863,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
   Timer? _debounce;
   bool _loading = false;
   bool _searched = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -869,13 +873,15 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
   }
 
   Future<void> _search(String query) async {
+    if (!mounted) return;
     _debounce?.cancel();
     if (query.trim().isEmpty) {
-      setState(() { _results.clear(); _loading = false; _searched = false; });
+      setState(() { _results.clear(); _loading = false; _searched = false; _error = null; });
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      setState(() { _loading = true; _searched = true; });
+      if (!mounted) return;
+      setState(() { _loading = true; _searched = true; _error = null; });
       try {
         final locations = await geo.locationFromAddress(query);
         final list = <({String name, double lat, double lng})>[];
@@ -891,9 +897,9 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
             list.add((name: '${loc.latitude.toStringAsFixed(2)}, ${loc.longitude.toStringAsFixed(2)}', lat: loc.latitude, lng: loc.longitude));
           }
         }
-        if (mounted) setState(() { _results..clear()..addAll(list); _loading = false; });
+        if (mounted) setState(() { _results..clear()..addAll(list); _loading = false; _error = null; });
       } catch (_) {
-        if (mounted) setState(() { _results.clear(); _loading = false; });
+        if (mounted) setState(() { _loading = false; _error = 'Search failed. Check your connection.'; });
       }
     });
   }
@@ -937,7 +943,10 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context, (name: '', lat: 0, lng: 0, isCurrent: true)),
+              onPressed: () {
+                _debounce?.cancel();
+                Navigator.pop(context, (name: '', lat: 0, lng: 0, isCurrent: true));
+              },
               icon: const Icon(Icons.gps_fixed, size: 18),
               label: const Text('Use Current Location'),
               style: ElevatedButton.styleFrom(
@@ -950,24 +959,34 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
             const SizedBox(height: 12),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _results.length,
-                separatorBuilder: (_, __) => Divider(height: 1, color: KaloColors.frostBorder),
-                itemBuilder: (ctx, i) {
-                  final item = _results[i];
-                  return ListTile(
-                    dense: true,
-                    title: Text(item.name, style: TextStyle(color: KaloColors.primaryText, fontSize: 14)),
-                    subtitle: Text('${item.lat.toStringAsFixed(2)}, ${item.lng.toStringAsFixed(2)}', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
-                    trailing: const Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
-                    onTap: () => Navigator.pop(context, (name: item.name, lat: item.lat, lng: item.lng, isCurrent: false)),
-                  );
-                },
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (int i = 0; i < _results.length; i++) ...[
+                      if (i > 0) Divider(height: 1, color: KaloColors.frostBorder),
+                      ListTile(
+                        dense: true,
+                        title: Text(_results[i].name, style: TextStyle(color: KaloColors.primaryText, fontSize: 14)),
+                        subtitle: Text('${_results[i].lat.toStringAsFixed(2)}, ${_results[i].lng.toStringAsFixed(2)}', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
+                        trailing: const Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
+                        onTap: () {
+                          _debounce?.cancel();
+                          Navigator.pop(context, (name: _results[i].name, lat: _results[i].lat, lng: _results[i].lng, isCurrent: false));
+                        },
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
-          if (_searched && !_loading && _results.isEmpty)
+          if (_error != null)
+            Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Text(_error!, style: TextStyle(color: Colors.red.shade300, fontSize: 13)),
+            )
+          else if (_searched && !_loading && _results.isEmpty)
             Padding(
               padding: EdgeInsets.only(top: 12),
               child: Text('No locations found', style: TextStyle(color: KaloColors.secondaryText, fontSize: 13)),
@@ -976,7 +995,10 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            _debounce?.cancel();
+            Navigator.pop(context);
+          },
           child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
         ),
       ],

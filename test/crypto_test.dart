@@ -17,7 +17,7 @@ void main() {
       final encryptedData = encryptLocalKey(originalApiKey, phoneAFingerprint);
       expect(
         () => decryptLocalKey(encryptedData, phoneBFingerprint),
-        throwsA(anything), // The design doc says throwsA(isA<Exception>()), but encryption failure might throw different things depending on padding/GCM tag
+        throwsA(anything),
       );
     });
   });

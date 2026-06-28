@@ -25,7 +25,6 @@ class UpdateDialog extends ConsumerStatefulWidget {
 
 class _UpdateDialogState extends ConsumerState<UpdateDialog> {
   _DialogState _state = _DialogState.available;
-  double _progress = 0;
   String? _errorMessage;
   String? _downloadedPath;
 
@@ -36,7 +35,6 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
       setState(() {
         _downloadedPath = path;
         _state = _DialogState.ready;
-        _progress = 1;
       });
     } catch (e) {
       setState(() {
