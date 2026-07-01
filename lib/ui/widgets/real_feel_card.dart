@@ -18,7 +18,7 @@ class RealFeelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final diff = (feelsLike - actualTemp).abs();
     final isWarmer = feelsLike > actualTemp;
-    final clampedDiff = diff.clamp(0, 15);
+    final clampedDiff = diff.clamp(0.0, 15.0);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

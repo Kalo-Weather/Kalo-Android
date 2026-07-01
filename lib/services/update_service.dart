@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
+import 'package:flutter/services.dart';
 
 class AppUpdate {
   final String version;
@@ -100,8 +100,12 @@ class CancelToken {
 }
 
 Future<bool> installApk(String filePath) async {
-  final result = await OpenFile.open(filePath);
-  return result.type == ResultType.done;
+  try {
+    await MethodChannel('com.kalo.mobile/apk_install').invokeMethod('installApk', {'path': filePath});
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 bool isNewerVersion(String remote, String current) {

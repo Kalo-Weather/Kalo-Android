@@ -360,6 +360,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final paradigm = ref.watch(navigationParadigmProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
+    final timeFormat = ref.watch(timeFormatProvider);
     final currentAppVersion = ref.watch(currentVersionProvider).valueOrNull ?? '?';
     final locationsAsync = ref.watch(allLocationsProvider);
     final proxyUrl = ref.watch(proxyBaseUrlProvider);
@@ -425,6 +426,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ref.read(unitPreferenceProvider.notifier).state = val;
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setString('unit_preference', val);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: KaloColors.frostFill,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.access_time_outlined, color: KaloColors.secondaryText, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('Time Format', style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
+                ),
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: timeFormat,
+                    icon: Icon(Icons.expand_more, color: KaloColors.secondaryText),
+                    dropdownColor: const Color(0xFF1C1C2E),
+                    style: TextStyle(color: KaloColors.primaryText, fontSize: 14),
+                    items: const [
+                      DropdownMenuItem(value: '24h', child: Text('24-hour')),
+                      DropdownMenuItem(value: '12h', child: Text('12-hour')),
+                    ],
+                    onChanged: (val) async {
+                      if (val != null) {
+                        ref.read(timeFormatProvider.notifier).state = val;
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('time_format', val);
                       }
                     },
                   ),

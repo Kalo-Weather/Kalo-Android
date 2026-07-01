@@ -51,6 +51,7 @@ void main() async {
 
   final initialNowBar = prefs.getBool('nowBarEnabled') ?? false;
   final initialWidgetRefresh = prefs.getBool('widgetRefreshEnabled') ?? true;
+  final initialTimeFormat = prefs.getString('time_format') ?? '24h';
 
   HomeWidget.registerInteractivityCallback(WidgetService.widgetCallback);
 
@@ -65,6 +66,7 @@ void main() async {
         unitPreferenceProvider.overrideWith((ref) => initialUnit),
         nowBarEnabledProvider.overrideWith((ref) => initialNowBar),
         widgetRefreshEnabledProvider.overrideWith((ref) => initialWidgetRefresh),
+        timeFormatProvider.overrideWith((ref) => initialTimeFormat),
       ],
       child: const KaloApp(),
     ),

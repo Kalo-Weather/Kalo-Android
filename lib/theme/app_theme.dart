@@ -37,12 +37,30 @@ class SkyGradients {
     colors: [Color(0xFFCC5500), Color(0xFF6B2FA0)],
   );
 
+  static const LinearGradient cloudy = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF6B7B8D), Color(0xFF3A4A5C)],
+  );
+
+  static const LinearGradient snowy = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFB0C4DE), Color(0xFF778899)],
+  );
+
   static LinearGradient forCondition(String condition, bool isDay) {
     if (condition == 'stormy' || condition == 'rainy') {
       return stormy;
     }
+    if (condition == 'snowy') {
+      return snowy;
+    }
     if (!isDay) {
       return clearNight;
+    }
+    if (condition == 'cloudy') {
+      return cloudy;
     }
     if (condition == 'foggy') {
       return LinearGradient(

@@ -99,6 +99,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         : ref.watch(currentWeatherProvider);
     final isFallback = ref.watch(isFallbackProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
+    final timeFormat = ref.watch(timeFormatProvider);
 
     final weather = weatherAsync.valueOrNull;
     final alerts = ref.watch(weatherAlertsProvider).valueOrNull ?? [];
@@ -126,7 +127,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         Container(
           decoration: BoxDecoration(
             gradient: weather != null
-                ? SkyGradients.forCondition(weather.condition.name, weather.weatherCode == 0)
+                ? SkyGradients.forCondition(weather.condition.name, _isDaytime())
                 : SkyGradients.clearDay,
           ),
         ),
@@ -168,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           children: [
                             _buildHeroSection(weather, locationName, unitPref),
                             const SizedBox(height: 16),
-                            _buildCardGrid(weather, unitPref),
+                            _buildCardGrid(weather, unitPref, timeFormat),
                             const SizedBox(height: 24),
                           ],
                         ),
@@ -369,8 +370,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  bool _isDaytime() {
+    final hour = DateTime.now().hour;
+    return hour >= 6 && hour < 20;
+  }
+
   Widget _buildHeroSection(WeatherData weather, String locationName, String unitPref) {
-    final isDay = weather.weatherCode == 0;
+    final isDay = _isDaytime();
     final temp = convertTemp(weather.temperature, unitPref);
     final unit = tempUnit(unitPref);
     final hi = convertTemp(weather.temperature + 3, unitPref);
@@ -412,7 +418,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildCardGrid(WeatherData weather, String unitPref) {
+  Widget _buildCardGrid(WeatherData weather, String unitPref, String timeFormat) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cardWidth = (constraints.maxWidth - 12) / 2;
@@ -487,16 +493,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: _buildRadarCard(),
             ),
             const SizedBox(height: 12),
-            _buildHourlyForecast(weather, unitPref),
+            _buildHourlyForecast(weather, unitPref, timeFormat),
             const SizedBox(height: 12),
-            _buildDailyForecast(weather, unitPref),
+            _buildDailyForecast(weather, unitPref, timeFormat),
           ],
         );
       },
     );
   }
 
-  Widget _buildHourlyForecast(WeatherData weather, String unitPref) {
+  String _formatHour(int hour, String timeFormat) {
+    if (timeFormat == '12h') {
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final h = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      return '$h${period}';
+    }
+    return '${hour.toString().padLeft(2, '0')}:00';
+  }
+
+  Widget _buildHourlyForecast(WeatherData weather, String unitPref, String timeFormat) {
     final forecasts = weather.hourlyForecast.take(8).toList();
     final now = DateTime.now();
     return FrostedGlass(
@@ -514,13 +529,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 16),
               itemBuilder: (_, i) {
                 final f = forecasts[i];
-                final hour = f.time.hour.toString().padLeft(2, '0');
+                final hour = f.time.hour;
                 final temp = convertTemp(f.temperature, unitPref);
-                final isNow = i == 0 && f.time.hour == now.hour;
+                final isNow = i == 0 && hour == now.hour;
                 return Column(
                   children: [
                     Text(
-                      isNow ? 'Now' : '$hour:00',
+                      isNow ? 'Now' : _formatHour(hour, timeFormat),
                       style: TextStyle(
                         color: isNow ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
                         fontSize: 11,
@@ -575,7 +590,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildDailyForecast(WeatherData weather, String unitPref) {
+  Widget _buildDailyForecast(WeatherData weather, String unitPref, String timeFormat) {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
     final days = <int>[];
@@ -688,7 +703,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 AnimatedSize(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
-                  child: isExpanded ? _buildDayDetails(d, weather.hourlyForecast, unitPref) : const SizedBox.shrink(),
+                  child: isExpanded ? _buildDayDetails(d, weather.hourlyForecast, unitPref, timeFormat) : const SizedBox.shrink(),
                 ),
               ],
             );
@@ -698,7 +713,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildDayDetails(DailyForecast day, List<HourlyForecast> hourlyForecast, String unitPref) {
+  Widget _buildDayDetails(DailyForecast day, List<HourlyForecast> hourlyForecast, String unitPref, String timeFormat) {
     final dayDate = DateTime(day.time.year, day.time.month, day.time.day);
     final hourly = hourlyForecast.where((h) =>
       h.time.day == dayDate.day &&
@@ -735,11 +750,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (_, i) {
                   final h = hourly[i];
-                  final hr = h.time.hour.toString().padLeft(2, '0');
+                  final hr = h.time.hour;
                   final temp = convertTemp(h.temperature, unitPref);
                   return Column(
                     children: [
-                      Text('$hr:00', style: TextStyle(color: KaloColors.secondaryText, fontSize: 10)),
+                      Text(_formatHour(hr, timeFormat), style: TextStyle(color: KaloColors.secondaryText, fontSize: 10)),
                       const SizedBox(height: 4),
                       BoxedIcon(_iconForCode(h.weatherCode), color: KaloColors.primaryText, size: 16),
                       const SizedBox(height: 4),

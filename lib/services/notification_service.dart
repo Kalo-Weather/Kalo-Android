@@ -23,7 +23,7 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -82,7 +82,7 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       color: Color(0xFFFF6B35),
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_notification',
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -121,7 +121,7 @@ class NotificationService {
       showWhen: true,
       usesChronometer: false,
       color: const Color(0xFFFF6B35),
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_notification',
       category: AndroidNotificationCategory.status,
     );
     const iosDetails = DarwinNotificationDetails(

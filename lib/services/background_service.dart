@@ -81,7 +81,7 @@ class BackgroundService {
   }
 
   static Future<void> _initNotificationPlugin(FlutterLocalNotificationsPlugin plugin) async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings();
     const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
     await plugin.initialize(settings: initSettings);
@@ -505,7 +505,7 @@ class BackgroundService {
       showWhen: true,
       usesChronometer: false,
       color: Color(0xFFFF6B35),
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_notification',
       category: AndroidNotificationCategory.status,
     );
     const iosDetails = DarwinNotificationDetails(
