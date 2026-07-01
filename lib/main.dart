@@ -18,6 +18,7 @@ import 'services/notification_service.dart';
 import 'services/update_service.dart';
 import 'services/widget_service.dart';
 import 'services/weather_service.dart';
+import 'services/background_service.dart';
 import 'ui/update/update_dialog.dart';
 import 'models/weather_condition.dart';
 import 'theme/app_theme.dart';
@@ -42,7 +43,14 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.init();
 
+  await BackgroundService.initialize();
+  await BackgroundService.schedulePeriodicRefresh();
+
   final initialUnit = await _detectInitialUnit();
+  await prefs.setString('unit_preference', initialUnit);
+
+  final initialNowBar = prefs.getBool('nowBarEnabled') ?? false;
+  final initialWidgetRefresh = prefs.getBool('widgetRefreshEnabled') ?? true;
 
   HomeWidget.registerInteractivityCallback(WidgetService.widgetCallback);
 
@@ -55,6 +63,8 @@ void main() async {
         notificationServiceProvider.overrideWithValue(notificationService),
         configStatusProvider.overrideWith((ref) => envStatus),
         unitPreferenceProvider.overrideWith((ref) => initialUnit),
+        nowBarEnabledProvider.overrideWith((ref) => initialNowBar),
+        widgetRefreshEnabledProvider.overrideWith((ref) => initialWidgetRefresh),
       ],
       child: const KaloApp(),
     ),
@@ -111,22 +121,23 @@ class _KaloAppState extends ConsumerState<KaloApp> {
     ref.listen(currentWeatherProvider, (prev, next) {
       next.whenData((weather) async {
         if (weather == null) return;
-        final enabled = ref.read(widgetRefreshEnabledProvider);
-        if (!enabled) return;
         final unitPref = ref.read(unitPreferenceProvider);
-        WidgetService.updateWeatherWidget(
-          temperatureCelsius: weather.temperature,
-          feelsLikeCelsius: weather.apparentTemperature,
-          condition: weather.condition,
-          locationName: 'My Location',
-          unitPref: unitPref,
-          hourlyForecast: weather.hourlyForecast,
-          dailyForecast: weather.dailyForecast,
-          humidity: weather.humidity,
-          windSpeed: weather.wind.speed,
-          uvIndex: weather.uvIndex.value,
-          aqi: weather.aqi.index.toInt(),
-        );
+        final widgetEnabled = ref.read(widgetRefreshEnabledProvider);
+        if (widgetEnabled) {
+          WidgetService.updateWeatherWidget(
+            temperatureCelsius: weather.temperature,
+            feelsLikeCelsius: weather.apparentTemperature,
+            condition: weather.condition,
+            locationName: 'My Location',
+            unitPref: unitPref,
+            hourlyForecast: weather.hourlyForecast,
+            dailyForecast: weather.dailyForecast,
+            humidity: weather.humidity,
+            windSpeed: weather.wind.speed,
+            uvIndex: weather.uvIndex.value,
+            aqi: weather.aqi.index.toInt(),
+          );
+        }
         final nowBarEnabled = ref.read(nowBarEnabledProvider);
         if (nowBarEnabled) {
           final temp = convertTemp(weather.temperature, unitPref);

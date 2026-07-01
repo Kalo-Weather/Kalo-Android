@@ -27,16 +27,31 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
   _DialogState _state = _DialogState.available;
   String? _errorMessage;
   String? _downloadedPath;
+  double _downloadProgress = 0;
+  CancelToken? _cancelToken;
 
   Future<void> _download() async {
-    setState(() => _state = _DialogState.downloading);
+    _cancelToken = CancelToken();
+    setState(() {
+      _state = _DialogState.downloading;
+      _downloadProgress = 0;
+    });
     try {
-      final path = await downloadApk(widget.update.downloadUrl);
+      final path = await downloadApk(
+        widget.update.downloadUrl,
+        onProgress: (progress) {
+          if (mounted) setState(() => _downloadProgress = progress);
+        },
+        cancelToken: _cancelToken,
+      );
+      if (!mounted) return;
       setState(() {
         _downloadedPath = path;
         _state = _DialogState.ready;
+        _downloadProgress = 1;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _state = _DialogState.error;
@@ -84,7 +99,7 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: _state == _DialogState.ready ? 1 : null,
+              value: _downloadProgress,
               backgroundColor: KaloColors.frostWhite,
               valueColor: AlwaysStoppedAnimation(Colors.blue.shade300),
               minHeight: 8,
@@ -92,7 +107,9 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
           ),
           const SizedBox(height: 6),
           Text(
-            _state == _DialogState.ready ? 'Download complete' : 'Downloading...',
+            _state == _DialogState.ready
+                ? 'Download complete'
+                : '${(_downloadProgress * 100).toStringAsFixed(0)}%',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
           ),
         ],
@@ -136,7 +153,10 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
       case _DialogState.downloading:
         return [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              _cancelToken?.cancel();
+              Navigator.pop(context);
+            },
             child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ];

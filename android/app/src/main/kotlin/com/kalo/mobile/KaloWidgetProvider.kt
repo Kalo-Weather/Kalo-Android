@@ -3,6 +3,8 @@ package com.kalo.mobile
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -38,7 +40,14 @@ object KaloWidgetRenderer {
     private fun getScaleFactor(appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, baselineWidth: Int): Float {
         if (appWidgetIds.isEmpty()) return 1.0f
         val opts = appWidgetManager.getAppWidgetOptions(appWidgetIds[0])
-        val actualWidth = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, baselineWidth)
+        val actualWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val sizes = opts.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, SizeF::class.java)
+            if (!sizes.isNullOrEmpty()) sizes[0].width.toInt() else baselineWidth
+        } else {
+            val minW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, baselineWidth)
+            val maxW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, baselineWidth)
+            (minW + maxW) / 2
+        }
         return (actualWidth.toFloat() / baselineWidth).coerceIn(MIN_SCALE, MAX_SCALE)
     }
 
@@ -137,7 +146,13 @@ object KaloWidgetRenderer {
                         setSp(views, id, primarySize, scale)
                         visibleBlocks.add(block)
                     }
-                    "feelsLike" -> {
+                    "condition" -> {
+                        val c = data.getString(KaloWidgetData.CONDITION, null) ?: ""
+                        views.setTextViewText(id, c)
+                        setSp(views, id, secondarySize, scale)
+                        visibleBlocks.add(block)
+                    }
+                        "feelsLike" -> {
                         if (feelsLike != null) {
                             views.setTextViewText(id, "Feels like $feelsLike")
                             setSp(views, id, secondarySize, scale)
@@ -207,7 +222,7 @@ object KaloWidgetRenderer {
 
     private fun defaultBlocks(sizeKey: String): List<String> {
         return when (sizeKey) {
-            "small" -> listOf("locationName", "temperature", "conditionIcon")
+            "small" -> listOf("locationName", "temperature", "conditionIcon", "condition")
             "medium" -> listOf("locationName", "temperature", "conditionIcon", "feelsLike")
             "large" -> listOf("locationName", "temperature", "conditionIcon", "feelsLike", "humidity", "wind", "uvIndex", "aqi")
             else -> listOf("temperature", "conditionIcon")
@@ -218,6 +233,7 @@ object KaloWidgetRenderer {
         return when (block) {
             "temperature" -> R.id.widget_temp
             "conditionIcon" -> R.id.widget_condition_emoji
+            "condition" -> R.id.widget_condition
             "locationName" -> R.id.widget_location
             "feelsLike" -> R.id.widget_feels_like
             "time" -> R.id.widget_time
@@ -233,6 +249,7 @@ object KaloWidgetRenderer {
         return when (id) {
             R.id.widget_temp -> "temperature"
             R.id.widget_condition_emoji -> "conditionIcon"
+            R.id.widget_condition -> "condition"
             R.id.widget_location -> "locationName"
             R.id.widget_feels_like -> "feelsLike"
             R.id.widget_time -> "time"
@@ -246,7 +263,7 @@ object KaloWidgetRenderer {
 
     private fun allBlockIdsFor(sizeKey: String): List<Int> {
         return when (sizeKey) {
-            "small" -> listOf(R.id.widget_temp, R.id.widget_condition_emoji, R.id.widget_location)
+            "small" -> listOf(R.id.widget_temp, R.id.widget_condition_emoji, R.id.widget_condition, R.id.widget_location)
             "medium" -> listOf(R.id.widget_temp, R.id.widget_condition_emoji, R.id.widget_location, R.id.widget_feels_like, R.id.widget_time)
             "large" -> listOf(
                 R.id.widget_temp, R.id.widget_condition_emoji, R.id.widget_location,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart' as geo;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../services/navigation_provider.dart';
 import '../../services/database_service.dart';
@@ -419,9 +420,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       DropdownMenuItem(value: 'Celsius', child: Text('Celsius')),
                       DropdownMenuItem(value: 'Fahrenheit', child: Text('Fahrenheit')),
                     ],
-                    onChanged: (val) {
+                    onChanged: (val) async {
                       if (val != null) {
                         ref.read(unitPreferenceProvider.notifier).state = val;
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('unit_preference', val);
                       }
                     },
                   ),
@@ -452,7 +455,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             label: 'Auto-Refresh Widgets',
             subtitle: 'Update widgets when weather refreshes',
             value: ref.watch(widgetRefreshEnabledProvider),
-            onChanged: (val) => ref.read(widgetRefreshEnabledProvider.notifier).state = val,
+            onChanged: (val) async {
+              ref.read(widgetRefreshEnabledProvider.notifier).state = val;
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('widgetRefreshEnabled', val);
+            },
           ),
           const SizedBox(height: 8),
           _buildToggleTile(
@@ -460,7 +467,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             label: 'Now Bar (One UI 6+)',
             subtitle: 'Show weather on Samsung lock screen Now Bar',
             value: ref.watch(nowBarEnabledProvider),
-            onChanged: (val) => ref.read(nowBarEnabledProvider.notifier).state = val,
+            onChanged: (val) async {
+              ref.read(nowBarEnabledProvider.notifier).state = val;
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('nowBarEnabled', val);
+            },
           ),
           const SizedBox(height: 24),
           _SectionHeader(title: 'API Keys'),

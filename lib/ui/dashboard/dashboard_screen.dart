@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
 import '../../services/weather_service.dart';
-import '../../services/radar_service.dart';
 import '../../services/location_service.dart';
 import '../../services/navigation_provider.dart';
 import '../../services/database_service.dart';
@@ -12,13 +11,17 @@ import '../../services/weather_alert_service.dart';
 import '../../services/notification_service.dart';
 import '../../models/weather_location.dart';
 import '../../models/weather_condition.dart';
+import '../../models/daily_forecast.dart';
+import '../../models/hourly_forecast.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/uvi_card.dart';
 import '../widgets/aqi_card.dart';
 import '../widgets/wind_card.dart';
 import '../widgets/humidity_card.dart';
+import '../widgets/real_feel_card.dart';
 import '../widgets/radar_card.dart';
 import '../radar/radar_screen.dart';
+import '../../services/radar_service.dart';
 import '../settings/settings_screen.dart';
 import '../../weather_icons/weather_icons.dart';
 import '../../weather_icons/boxed_icon.dart';
@@ -35,6 +38,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _currentLocationIndex = 0;
+  int? _expandedDayIndex;
   final PageController _pageController = PageController();
 
   @override
@@ -93,7 +97,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final weatherAsync = hasLocations
         ? ref.watch(weatherDataProvider('${activeLocations[_currentLocationIndex].latitude},${activeLocations[_currentLocationIndex].longitude}'))
         : ref.watch(currentWeatherProvider);
-    final radarAsync = ref.watch(radarFrameProvider);
     final isFallback = ref.watch(isFallbackProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
 
@@ -165,7 +168,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           children: [
                             _buildHeroSection(weather, locationName, unitPref),
                             const SizedBox(height: 16),
-                            _buildCardGrid(weather, radarAsync.asData?.value, unitPref),
+                            _buildCardGrid(weather, unitPref),
                             const SizedBox(height: 24),
                           ],
                         ),
@@ -409,7 +412,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildCardGrid(WeatherData weather, String? radarFrame, String unitPref) {
+  Widget _buildCardGrid(WeatherData weather, String unitPref) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cardWidth = (constraints.maxWidth - 12) / 2;
@@ -467,21 +470,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 SizedBox(
                   width: cardWidth,
                   child: WeatherCard(
-                    title: 'Precipitation',
-                    icon: Icons.radar,
-                    content: RadarCard(
-                      frameUrl: radarFrame,
-                      onTap: () {
-                        if (radarFrame != null) {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => RadarScreen(frameUrl: radarFrame),
-                          ));
-                        }
-                      },
+                    title: 'Real Feel',
+                    icon: Icons.thermostat,
+                    content: RealFeelCard(
+                      feelsLike: convertTemp(weather.apparentTemperature, unitPref),
+                      actualTemp: convertTemp(weather.temperature, unitPref),
+                      unit: tempUnit(unitPref),
                     ),
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: constraints.maxWidth,
+              child: _buildRadarCard(),
             ),
             const SizedBox(height: 12),
             _buildHourlyForecast(weather, unitPref),
@@ -495,6 +498,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildHourlyForecast(WeatherData weather, String unitPref) {
     final forecasts = weather.hourlyForecast.take(8).toList();
+    final now = DateTime.now();
     return FrostedGlass(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -503,7 +507,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Text('Hourly Forecast', style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 80,
+            height: 90,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: forecasts.length,
@@ -512,9 +516,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final f = forecasts[i];
                 final hour = f.time.hour.toString().padLeft(2, '0');
                 final temp = convertTemp(f.temperature, unitPref);
+                final isNow = i == 0 && f.time.hour == now.hour;
                 return Column(
                   children: [
-                    Text('$hour:00', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
+                    Text(
+                      isNow ? 'Now' : '$hour:00',
+                      style: TextStyle(
+                        color: isNow ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
+                        fontSize: 11,
+                        fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     BoxedIcon(
                       _iconForCode(f.weatherCode),
@@ -524,7 +536,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 6),
                     Text(
                       '${temp.toStringAsFixed(0)}°${tempUnit(unitPref)}',
-                      style: TextStyle(color: KaloColors.primaryText, fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: KaloColors.primaryText,
+                        fontSize: 14,
+                        fontWeight: isNow ? FontWeight.w700 : FontWeight.w600,
+                      ),
                     ),
                   ],
                 );
@@ -536,12 +552,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildRadarCard() {
+    final frameAsync = ref.watch(radarFrameProvider);
+    final frameUrl = frameAsync.asData?.value;
+    return WeatherCard(
+      title: 'Radar',
+      icon: Icons.radar,
+      size: CardSize.wide,
+      content: RadarCard(
+        frameUrl: frameUrl,
+        onTap: frameUrl != null
+            ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RadarScreen(frameUrl: frameUrl),
+                  ),
+                );
+              }
+            : null,
+      ),
+    );
+  }
+
   Widget _buildDailyForecast(WeatherData weather, String unitPref) {
-    final days = weather.dailyForecast.take(7).toList();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final days = <int>[];
+    for (var i = 0; i < weather.dailyForecast.length && days.length < 7; i++) {
+      final d = weather.dailyForecast[i];
+      final date = DateTime(d.time.year, d.time.month, d.time.day);
+      if (!date.isBefore(todayDate)) days.add(i);
+    }
     if (days.isEmpty) return const SizedBox.shrink();
 
-    final globalMin = days.map((d) => d.min).reduce((a, b) => a < b ? a : b);
-    final globalMax = days.map((d) => d.max).reduce((a, b) => a > b ? a : b);
+    final selected = days.map((i) => weather.dailyForecast[i]).toList();
+    final globalMin = selected.map((d) => d.min).reduce((a, b) => a < b ? a : b);
+    final globalMax = selected.map((d) => d.max).reduce((a, b) => a > b ? a : b);
     final range = (globalMax - globalMin).abs().clamp(1, double.infinity);
 
     return FrostedGlass(
@@ -551,70 +598,161 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Text('7-Day Forecast', style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
-          ...days.map((d) {
-            final dayLabel = _dayAbbreviation(d.time.weekday);
+          ...days.asMap().entries.map((entry) {
+            final i = entry.key;
+            final d = weather.dailyForecast[entry.value];
+            final date = DateTime(d.time.year, d.time.month, d.time.day);
+            final isToday = date == todayDate;
+            final dayLabel = isToday ? 'Today' : _dayAbbreviation(d.time.weekday);
             final low = convertTemp(d.min, unitPref);
             final high = convertTemp(d.max, unitPref);
             final lowPos = ((d.min - globalMin) / range);
             final highPos = ((d.max - globalMin) / range);
+            final isExpanded = _expandedDayIndex == i;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 36,
-                    child: Text(dayLabel, style: TextStyle(color: KaloColors.secondaryText, fontSize: 13, fontWeight: FontWeight.w500)),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 22,
-                    child: BoxedIcon(_iconForCode(d.weatherCode), color: KaloColors.primaryText, size: 16),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      '${low.toStringAsFixed(0)}°',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: Container(
-                        height: 6,
-                        color: KaloColors.frostWhite,
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: (highPos - lowPos).clamp(0.05, 1.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(3),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF4A90D9), Color(0xFFFF6B35)],
+            return Column(
+              children: [
+                GestureDetector(
+                  onTap: () => setState(() => _expandedDayIndex = isExpanded ? null : i),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 40,
+                          child: Row(
+                            children: [
+                              Text(dayLabel, style: TextStyle(
+                                color: isToday ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
+                                fontSize: 13,
+                                fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                              )),
+                              if (isExpanded)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 2),
+                                  child: Icon(Icons.expand_less, color: KaloColors.secondaryText, size: 14),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 22,
+                          child: BoxedIcon(_iconForCode(d.weatherCode), color: KaloColors.primaryText, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 40,
+                          child: Text(
+                            '${low.toStringAsFixed(0)}°',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: Container(
+                              height: 6,
+                              color: KaloColors.frostWhite,
+                              alignment: Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: (highPos - lowPos).clamp(0.05, 1.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(3),
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF4A90D9), Color(0xFFFF6B35)],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 40,
+                          child: Text(
+                            '${high.toStringAsFixed(0)}°',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(color: KaloColors.primaryText, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      '${high.toStringAsFixed(0)}°',
-                      textAlign: TextAlign.left,
-                      style: TextStyle(color: KaloColors.primaryText, fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: isExpanded ? _buildDayDetails(d, weather.hourlyForecast, unitPref) : const SizedBox.shrink(),
+                ),
+              ],
             );
           }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayDetails(DailyForecast day, List<HourlyForecast> hourlyForecast, String unitPref) {
+    final dayDate = DateTime(day.time.year, day.time.month, day.time.day);
+    final hourly = hourlyForecast.where((h) =>
+      h.time.day == dayDate.day &&
+      h.time.month == dayDate.month &&
+      h.time.year == dayDate.year
+    ).toList();
+
+    final condition = weatherCodeToCondition(day.weatherCode);
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 4, bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1, color: KaloColors.frostWhite.withValues(alpha: 0.3)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              BoxedIcon(_iconForCode(day.weatherCode), color: KaloColors.primaryText, size: 14),
+              const SizedBox(width: 6),
+              Text(
+                condition.label,
+                style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
+              ),
+            ],
+          ),
+          if (hourly.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 64,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: hourly.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) {
+                  final h = hourly[i];
+                  final hr = h.time.hour.toString().padLeft(2, '0');
+                  final temp = convertTemp(h.temperature, unitPref);
+                  return Column(
+                    children: [
+                      Text('$hr:00', style: TextStyle(color: KaloColors.secondaryText, fontSize: 10)),
+                      const SizedBox(height: 4),
+                      BoxedIcon(_iconForCode(h.weatherCode), color: KaloColors.primaryText, size: 16),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${temp.toStringAsFixed(0)}°',
+                        style: TextStyle(color: KaloColors.primaryText, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1,7 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
@@ -56,15 +57,46 @@ final currentVersionProvider = FutureProvider<String>((ref) async {
   return info.version;
 });
 
-Future<String> downloadApk(String url, {void Function(double progress)? onProgress}) async {
+Future<String> downloadApk(String url, {void Function(double progress)? onProgress, CancelToken? cancelToken}) async {
   final dir = await getTemporaryDirectory();
   final file = File('${dir.path}/kalo-update.apk');
+  final client = http.Client();
 
-  final res = await http.get(Uri.parse(url));
-  if (res.statusCode != 200) throw Exception('Download failed: ${res.statusCode}');
+  try {
+    final request = http.Request('GET', Uri.parse(url));
+    final response = await client.send(request);
+    if (response.statusCode != 200) {
+      throw Exception('Download failed: ${response.statusCode}');
+    }
 
-  await file.writeAsBytes(res.bodyBytes);
-  return file.path;
+    final totalBytes = response.contentLength ?? 0;
+    var receivedBytes = 0;
+    final sink = file.openWrite();
+
+    await for (final chunk in response.stream) {
+      cancelToken?.throwIfCancelled();
+      sink.add(chunk);
+      receivedBytes += chunk.length;
+      if (totalBytes > 0 && onProgress != null) {
+        onProgress(receivedBytes / totalBytes);
+      }
+    }
+
+    await sink.close();
+    return file.path;
+  } finally {
+    client.close();
+  }
+}
+
+class CancelToken {
+  bool _cancelled = false;
+
+  void cancel() => _cancelled = true;
+
+  void throwIfCancelled() {
+    if (_cancelled) throw Exception('Download cancelled');
+  }
 }
 
 Future<bool> installApk(String filePath) async {
@@ -75,7 +107,8 @@ Future<bool> installApk(String filePath) async {
 bool isNewerVersion(String remote, String current) {
   final rParts = remote.split('.').map((e) => int.tryParse(e) ?? 0).toList();
   final cParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-  for (var i = 0; i < 3; i++) {
+  final maxLen = rParts.length > cParts.length ? rParts.length : cParts.length;
+  for (var i = 0; i < maxLen; i++) {
     final r = i < rParts.length ? rParts[i] : 0;
     final c = i < cParts.length ? cParts[i] : 0;
     if (r != c) return r > c;
