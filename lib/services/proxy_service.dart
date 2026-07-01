@@ -32,22 +32,34 @@ final currentProxyWeatherProvider = FutureProvider<ProxyWeatherResponse?>((ref) 
   var lon = 0.0;
   var hasCoords = false;
 
-  final pos = await ref.watch(currentPositionProvider.future);
-  if (pos != null) {
-    lat = pos.latitude;
-    lon = pos.longitude;
-    hasCoords = true;
-  } else {
-    final locations = await ref.watch(allLocationsProvider.future);
-    if (locations.isNotEmpty) {
-      lat = locations.first.latitude;
-      lon = locations.first.longitude;
+  try {
+    final pos = await ref.watch(currentPositionProvider.future).timeout(const Duration(seconds: 12));
+    if (pos != null) {
+      lat = pos.latitude;
+      lon = pos.longitude;
       hasCoords = true;
     }
+  } on TimeoutException {
+    // GPS timed out — will try saved locations
+  }
+
+  if (!hasCoords) {
+    try {
+      final locations = await ref.watch(allLocationsProvider.future);
+      if (locations.isNotEmpty) {
+        lat = locations.first.latitude;
+        lon = locations.first.longitude;
+        hasCoords = true;
+      }
+    } catch (_) {}
   }
 
   if (!hasCoords) return null;
-  return _fetchWithFallback(ref, baseUrl, lat, lon);
+  try {
+    return await _fetchWithFallback(ref, baseUrl, lat, lon).timeout(const Duration(seconds: 20));
+  } on TimeoutException {
+    return null;
+  }
 });
 
 Future<ProxyWeatherResponse?> _fetchWithFallback(Ref ref, String baseUrl, double lat, double lon) async {

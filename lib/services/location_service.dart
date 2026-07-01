@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,11 @@ final currentPositionProvider = FutureProvider<Position?>((ref) async {
   final service = ref.watch(locationServiceProvider);
   final hasPermission = await service.requestPermission();
   if (hasPermission) {
-    return await service.getCurrentLocation();
+    try {
+      return await service.getCurrentLocation().timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      return null;
+    }
   }
   return null;
 });

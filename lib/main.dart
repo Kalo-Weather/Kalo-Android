@@ -92,6 +92,9 @@ Future<String> _detectInitialUnit() async {
 }
 
 final onboardingCompletedProvider = StateProvider<bool>((ref) => false);
+final nowBarEnabledProvider = StateProvider<bool>((ref) => false);
+final widgetRefreshEnabledProvider = StateProvider<bool>((ref) => true);
+final timeFormatProvider = StateProvider<String>((ref) => '24h');
 
 class KaloApp extends ConsumerStatefulWidget {
   const KaloApp({super.key});
