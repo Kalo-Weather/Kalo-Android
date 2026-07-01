@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
@@ -26,10 +27,27 @@ final proxyWeatherProvider = FutureProvider.family<ProxyWeatherResponse?, String
 });
 
 final currentProxyWeatherProvider = FutureProvider<ProxyWeatherResponse?>((ref) async {
-  final pos = await ref.watch(currentPositionProvider.future);
   final baseUrl = ref.watch(proxyBaseUrlProvider);
-  if (pos == null) return null;
-  return _fetchWithFallback(ref, baseUrl, pos.latitude, pos.longitude);
+  var lat = 0.0;
+  var lon = 0.0;
+  var hasCoords = false;
+
+  final pos = await ref.watch(currentPositionProvider.future);
+  if (pos != null) {
+    lat = pos.latitude;
+    lon = pos.longitude;
+    hasCoords = true;
+  } else {
+    final locations = await ref.watch(allLocationsProvider.future);
+    if (locations.isNotEmpty) {
+      lat = locations.first.latitude;
+      lon = locations.first.longitude;
+      hasCoords = true;
+    }
+  }
+
+  if (!hasCoords) return null;
+  return _fetchWithFallback(ref, baseUrl, lat, lon);
 });
 
 Future<ProxyWeatherResponse?> _fetchWithFallback(Ref ref, String baseUrl, double lat, double lon) async {

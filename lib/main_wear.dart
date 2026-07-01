@@ -50,11 +50,24 @@ class KaloWearApp extends StatelessWidget {
   }
 }
 
-class WearDashboard extends ConsumerWidget {
+class WearDashboard extends ConsumerStatefulWidget {
   const WearDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WearDashboard> createState() => _WearDashboardState();
+}
+
+class _WearDashboardState extends ConsumerState<WearDashboard> {
+  int _retryTrigger = 0;
+
+  void _retry() {
+    setState(() => _retryTrigger++);
+    ref.invalidate(currentWeatherProvider);
+    ref.invalidate(currentPositionProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final weatherAsync = ref.watch(currentWeatherProvider);
     final localityAsync = ref.watch(currentLocalityProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
@@ -164,6 +177,12 @@ class WearDashboard extends ConsumerWidget {
           const Text(
             'Unable to load weather',
             style: TextStyle(color: Colors.white54, fontSize: 16),
+          ),
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: _retry,
+            icon: const Icon(Icons.refresh, color: Colors.white54, size: 18),
+            label: const Text('Retry', style: TextStyle(color: Colors.white54)),
           ),
         ],
       ),
