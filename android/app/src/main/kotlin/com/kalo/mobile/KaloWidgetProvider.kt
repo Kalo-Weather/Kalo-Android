@@ -31,11 +31,11 @@ object KaloWidgetData {
 
 object KaloWidgetRenderer {
 
-    private const val BASELINE_SMALL_WIDTH = 120
-    private const val BASELINE_MEDIUM_WIDTH = 260
-    private const val BASELINE_LARGE_WIDTH = 280
-    private const val MIN_SCALE = 0.7f
-    private const val MAX_SCALE = 1.5f
+    private const val BASELINE_SMALL_WIDTH = 140
+    private const val BASELINE_MEDIUM_WIDTH = 294
+    private const val BASELINE_LARGE_WIDTH = 294
+    private const val MIN_SCALE = 0.8f
+    private const val MAX_SCALE = 1.3f
 
     private fun getScaleFactor(appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, baselineWidth: Int): Float {
         if (appWidgetIds.isEmpty()) return 1.0f
@@ -121,9 +121,9 @@ object KaloWidgetRenderer {
 
         val visibleBlocks = mutableListOf<String>()
 
-        val tempSize = if (sizeKey == "small") 36f else if (sizeKey == "medium") 38f else 34f
-        val emojiSize = if (sizeKey == "small") 28f else 26f
-        val primarySize = if (sizeKey == "small") 11f else if (sizeKey == "medium") 12f else 12f
+        val tempSize = if (sizeKey == "small") 30f else if (sizeKey == "medium") 38f else 34f
+        val emojiSize = if (sizeKey == "small") 24f else 26f
+        val primarySize = if (sizeKey == "small") 10f else if (sizeKey == "medium") 12f else 12f
         val secondarySize = 11f
         val blockSize = 11f
 

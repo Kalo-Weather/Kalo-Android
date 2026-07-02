@@ -512,8 +512,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildHourlyForecast(WeatherData weather, String unitPref, String timeFormat) {
-    final forecasts = weather.hourlyForecast.take(8).toList();
+    final hours = weather.hourlyForecast.take(24).toList();
     final now = DateTime.now();
+    final temps = hours.map((h) => h.temperature).toList();
+    final minTemp = temps.reduce((a, b) => a < b ? a : b);
+    final maxTemp = temps.reduce((a, b) => a > b ? a : b);
+    const itemWidth = 52.0;
+    const sparklineHeight = 28.0;
+    const columnHeight = 120.0;
+    const totalHeight = sparklineHeight + 8 + columnHeight;
+
     return FrostedGlass(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -522,49 +530,114 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Text('Hourly Forecast', style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 90,
-            child: ListView.separated(
+            height: totalHeight,
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              itemCount: forecasts.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (_, i) {
-                final f = forecasts[i];
-                final hour = f.time.hour;
-                final temp = convertTemp(f.temperature, unitPref);
-                final isNow = i == 0 && hour == now.hour;
-                return Column(
-                  children: [
-                    Text(
-                      isNow ? 'Now' : _formatHour(hour, timeFormat),
-                      style: TextStyle(
-                        color: isNow ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
-                        fontSize: 11,
-                        fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: sparklineHeight,
+                    width: itemWidth * hours.length,
+                    child: CustomPaint(
+                      painter: _HourlySparklinePainter(
+                        temperatures: temps,
+                        minTemp: minTemp,
+                        maxTemp: maxTemp,
+                        itemWidth: itemWidth,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    BoxedIcon(
-                      _iconForCode(f.weatherCode),
-                      color: KaloColors.primaryText,
-                      size: 20,
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: columnHeight,
+                    width: itemWidth * hours.length,
+                    child: Row(
+                      children: hours.map((h) {
+                        final hour = h.time.hour;
+                        final temp = convertTemp(h.temperature, unitPref);
+                        final isNow = hour == now.hour;
+                        return SizedBox(
+                          width: itemWidth,
+                          child: Column(
+                            children: [
+                              Text(
+                                isNow ? 'Now' : _formatHour(hour, timeFormat),
+                                style: TextStyle(
+                                  color: isNow ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
+                                  fontSize: 10,
+                                  fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              BoxedIcon(
+                                _iconForCode(h.weatherCode),
+                                color: KaloColors.primaryText,
+                                size: 18,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${temp.toStringAsFixed(0)}°',
+                                style: TextStyle(
+                                  color: KaloColors.primaryText,
+                                  fontSize: 13,
+                                  fontWeight: isNow ? FontWeight.w700 : FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              _buildPrecipBar(h.weatherCode),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${temp.toStringAsFixed(0)}°${tempUnit(unitPref)}',
-                      style: TextStyle(
-                        color: KaloColors.primaryText,
-                        fontSize: 14,
-                        fontWeight: isNow ? FontWeight.w700 : FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                );
-              },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildPrecipBar(int weatherCode) {
+    final chance = _precipChance(weatherCode);
+    if (chance <= 0) return const SizedBox(height: 4);
+    return SizedBox(
+      width: 24,
+      height: 4,
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: KaloColors.frostWhite,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          FractionallySizedBox(
+            widthFactor: chance,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF4A90D9).withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _precipChance(int code) {
+    if (code == 0) return 0.0;
+    if (code <= 3) return 0.1;
+    if (code <= 48) return 0.05;
+    if (code <= 57) return 0.4;
+    if (code <= 67) return 0.7;
+    if (code <= 77) return 0.6;
+    if (code <= 82) return 0.5;
+    return 0.85;
   }
 
   Widget _buildRadarCard() {
@@ -1001,6 +1074,59 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+}
+
+class _HourlySparklinePainter extends CustomPainter {
+  final List<double> temperatures;
+  final double minTemp;
+  final double maxTemp;
+  final double itemWidth;
+
+  _HourlySparklinePainter({
+    required this.temperatures,
+    required this.minTemp,
+    required this.maxTemp,
+    required this.itemWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (temperatures.isEmpty) return;
+    final range = (maxTemp - minTemp).abs().clamp(1, double.infinity);
+    final linePaint = Paint()
+      ..color = const Color(0xFFFF6B35).withValues(alpha: 0.5)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final dotPaint = Paint()
+      ..color = const Color(0xFFFF6B35)
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final halfWidth = itemWidth / 2;
+
+    for (var i = 0; i < temperatures.length; i++) {
+      final x = i * itemWidth + halfWidth;
+      final y = size.height - ((temperatures[i] - minTemp) / range) * (size.height - 6) - 3;
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+
+      canvas.drawCircle(Offset(x, y), 2, dotPaint);
+    }
+
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(_HourlySparklinePainter old) =>
+    old.temperatures != temperatures ||
+    old.minTemp != minTemp ||
+    old.maxTemp != maxTemp ||
+    old.itemWidth != itemWidth;
 }
 
 class _LocationSearchDialog extends StatefulWidget {

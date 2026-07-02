@@ -4,11 +4,11 @@
     android:id="@+id/widget_container_small"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="6dp"
+    android:layout_margin="4dp"
     android:background="@drawable/kalo_widget_bg"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/widget_location"
@@ -18,7 +18,7 @@
         android:gravity="center"
         android:maxLines="1"
         android:textColor="#99FFFFFF"
-        android:textSize="11sp"
+        android:textSize="10sp"
         tools:text="San Francisco" />
 
     <LinearLayout
@@ -32,16 +32,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#FFFFFFFF"
-            android:textSize="36sp"
+            android:textSize="30sp"
             android:textStyle="bold"
-            tools:text="72°F" />
+            tools:text="72°" />
 
         <TextView
             android:id="@+id/widget_condition_emoji"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:textSize="28sp"
+            android:layout_marginStart="4dp"
+            android:textSize="24sp"
             tools:text="☀️" />
 
     </LinearLayout>
@@ -51,7 +51,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#99FFFFFF"
-        android:textSize="11sp"
+        android:textSize="10sp"
+        android:maxLines="1"
         tools:text="Clear Sky" />
 
 </LinearLayout>
