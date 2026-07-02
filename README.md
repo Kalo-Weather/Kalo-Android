@@ -1,7 +1,7 @@
 # Kalo Weather
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.12-02569B?logo=flutter)](https://flutter.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Custom-blue.svg)](LICENSE.md)
 [![CI](https://github.com/Kalo-Weather/Kalo-Android/actions/workflows/build.yml/badge.svg)](https://github.com/Kalo-Weather/Kalo-Android/actions/workflows/build.yml)
 
 **Kalo Weather** is a beautiful, privacy-focused weather app for Android (with a Wear OS companion) built with Flutter. It uses Material You dynamic theming, custom weather illustrations, and supports both a proxy backend and direct API fallback.
@@ -183,4 +183,4 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 
 ## License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+This project is licensed under the Custom Source-Available License — see [LICENSE.md](LICENSE.md) for details.
