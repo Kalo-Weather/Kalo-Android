@@ -704,25 +704,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   onTap: () => setState(() => _expandedDayIndex = isExpanded ? null : i),
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 40,
-                          child: Row(
-                            children: [
-                              Text(dayLabel, style: TextStyle(
-                                color: isToday ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
-                                fontSize: 13,
-                                fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-                              )),
-                              if (isExpanded)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 2),
-                                  child: Icon(Icons.expand_less, color: KaloColors.secondaryText, size: 14),
-                                ),
-                            ],
-                          ),
+                          width: 44,
+                          child: Text(dayLabel, style: TextStyle(
+                            color: isToday ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
+                            fontSize: 13,
+                            fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                          )),
                         ),
                         const SizedBox(width: 8),
                         SizedBox(
@@ -731,7 +722,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(width: 8),
                         SizedBox(
-                          width: 40,
+                          width: 36,
                           child: Text(
                             '${low.toStringAsFixed(0)}°',
                             textAlign: TextAlign.right,
@@ -762,12 +753,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(width: 8),
                         SizedBox(
-                          width: 40,
+                          width: 36,
                           child: Text(
                             '${high.toStringAsFixed(0)}°',
                             textAlign: TextAlign.left,
                             style: TextStyle(color: KaloColors.primaryText, fontSize: 13, fontWeight: FontWeight.w600),
                           ),
+                        ),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          duration: const Duration(milliseconds: 200),
+                          turns: isExpanded ? 0.5 : 0.0,
+                          child: Icon(Icons.expand_more, color: KaloColors.secondaryText, size: 18),
                         ),
                       ],
                     ),
@@ -778,6 +775,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   curve: Curves.easeInOut,
                   child: isExpanded ? _buildDayDetails(d, weather.hourlyForecast, unitPref, timeFormat) : const SizedBox.shrink(),
                 ),
+                if (i < days.length - 1)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 44),
+                    child: Container(height: 1, color: KaloColors.frostWhite.withValues(alpha: 0.15)),
+                  ),
               ],
             );
           }),
@@ -795,14 +797,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ).toList();
 
     final condition = weatherCodeToCondition(day.weatherCode);
+    final maxPrecip = hourly.isEmpty ? 0.0 : hourly.map((h) => _precipChance(h.weatherCode)).reduce((a, b) => a > b ? a : b);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 40, top: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 44, top: 4, bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(height: 1, color: KaloColors.frostWhite.withValues(alpha: 0.3)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               BoxedIcon(_iconForCode(day.weatherCode), color: KaloColors.primaryText, size: 14),
@@ -811,36 +814,62 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 condition.label,
                 style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
               ),
+              const Spacer(),
+              if (maxPrecip > 0.1)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.water_drop, color: const Color(0xFF4A90D9), size: 12),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${(maxPrecip * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(color: const Color(0xFF4A90D9), fontSize: 11),
+                    ),
+                  ],
+                ),
             ],
           ),
           if (hourly.isNotEmpty) ...[
             const SizedBox(height: 10),
             SizedBox(
-              height: 64,
+              height: 72,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: hourly.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
                   final h = hourly[i];
                   final hr = h.time.hour;
                   final temp = convertTemp(h.temperature, unitPref);
-                  return Column(
-                    children: [
-                      Text(_formatHour(hr, timeFormat), style: TextStyle(color: KaloColors.secondaryText, fontSize: 10)),
-                      const SizedBox(height: 4),
-                      BoxedIcon(_iconForCode(h.weatherCode), color: KaloColors.primaryText, size: 16),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${temp.toStringAsFixed(0)}°',
-                        style: TextStyle(color: KaloColors.primaryText, fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                  return SizedBox(
+                    width: 44,
+                    child: Column(
+                      children: [
+                        Text(
+                          _formatHour(hr, timeFormat),
+                          style: TextStyle(color: KaloColors.secondaryText, fontSize: 9),
+                        ),
+                        const SizedBox(height: 4),
+                        BoxedIcon(_iconForCode(h.weatherCode), color: KaloColors.primaryText, size: 16),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${temp.toStringAsFixed(0)}°',
+                          style: TextStyle(color: KaloColors.primaryText, fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        _buildPrecipBar(h.weatherCode),
+                      ],
+                    ),
                   );
                 },
               ),
             ),
           ],
+          if (hourly.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('Hourly data unavailable', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
+            ),
         ],
       ),
     );
