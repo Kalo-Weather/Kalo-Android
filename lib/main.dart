@@ -39,6 +39,7 @@ void main() async {
   } catch (_) {}
 
   final notificationService = NotificationService();
+  await notificationService.init();
 
   final storedUnit = prefs.getString('unit_preference') ?? 'Celsius';
   final initialNowBar = prefs.getBool('nowBarEnabled') ?? false;
