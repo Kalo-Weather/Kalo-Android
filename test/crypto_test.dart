@@ -7,14 +7,14 @@ void main() {
     const phoneAFingerprint = "Pixel-7-Pro:redfin-112233";
     const phoneBFingerprint = "Samsung-S23:kalama-445566";
 
-    test('Successful Encryption and Decryption on Same Device Signature', () {
-      final encryptedData = encryptLocalKey(originalApiKey, phoneAFingerprint);
-      final decryptedData = decryptLocalKey(encryptedData, phoneAFingerprint);
+    test('Successful Encryption and Decryption on Same Device Signature', () async {
+      final encryptedData = await encryptLocalKey(originalApiKey, phoneAFingerprint);
+      final decryptedData = await decryptLocalKey(encryptedData, phoneAFingerprint);
       expect(decryptedData, equals(originalApiKey));
     });
 
-    test('Cryptographic Rejection when Attempting to Decrypt on Different Device Signature', () {
-      final encryptedData = encryptLocalKey(originalApiKey, phoneAFingerprint);
+    test('Cryptographic Rejection when Attempting to Decrypt on Different Device Signature', () async {
+      final encryptedData = await encryptLocalKey(originalApiKey, phoneAFingerprint);
       expect(
         () => decryptLocalKey(encryptedData, phoneBFingerprint),
         throwsA(anything),

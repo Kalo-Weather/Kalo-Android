@@ -156,14 +156,14 @@ class BackgroundService {
         final fingerprint = await deviceService.getHardwareFingerprint();
         final weatherKey = await db.getApiKey('openweathermap');
         if (weatherKey != null) {
-          final raw = decryptLocalKey(weatherKey.encryptedValue, fingerprint);
-          headers['X-Encrypted-Weather-Key'] = encryptForProxy(raw, decryptionSecret);
+          final raw = await decryptLocalKey(weatherKey.encryptedValue, fingerprint);
+          headers['X-Encrypted-Weather-Key'] = await encryptForProxy(raw, decryptionSecret);
         }
 
         final aqiKey = await db.getApiKey('waqi');
         if (aqiKey != null) {
-          final raw = decryptLocalKey(aqiKey.encryptedValue, fingerprint);
-          headers['X-Encrypted-Aqi-Key'] = encryptForProxy(raw, decryptionSecret);
+          final raw = await decryptLocalKey(aqiKey.encryptedValue, fingerprint);
+          headers['X-Encrypted-Aqi-Key'] = await encryptForProxy(raw, decryptionSecret);
         }
       } catch (_) {}
     }
@@ -209,7 +209,7 @@ class BackgroundService {
 
     String apiKey;
     try {
-      apiKey = decryptLocalKey(weatherKey.encryptedValue, fingerprint);
+      apiKey = await decryptLocalKey(weatherKey.encryptedValue, fingerprint);
     } catch (_) {
       return null;
     }
@@ -259,7 +259,7 @@ class BackgroundService {
       final aqiKeyData = await db.getApiKey('waqi');
       if (aqiKeyData != null) {
         try {
-          final rawAqi = decryptLocalKey(aqiKeyData.encryptedValue, fingerprint);
+          final rawAqi = await decryptLocalKey(aqiKeyData.encryptedValue, fingerprint);
           final aqiUri = Uri.parse('https://api.waqi.info/feed/geo:$lat;$lon/').replace(queryParameters: {
             'token': rawAqi,
           });

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,19 +91,19 @@ Future<ProxyWeatherResponse?> _fetchProxy(Ref ref, String baseUrl, double lat, d
     final deviceService = ref.read(deviceServiceProvider);
     final fingerprint = await deviceService.getHardwareFingerprint();
 
-    final weatherKey = await db.getApiKey('openweathermap');
+      final weatherKey = await db.getApiKey('openweathermap');
     if (weatherKey != null) {
       try {
-        final raw = decryptLocalKey(weatherKey.encryptedValue, fingerprint);
-        headers['X-Encrypted-Weather-Key'] = encryptForProxy(raw, decryptionSecret);
+        final raw = await decryptLocalKey(weatherKey.encryptedValue, fingerprint);
+        headers['X-Encrypted-Weather-Key'] = await encryptForProxy(raw, decryptionSecret);
       } catch (_) {}
     }
 
     final aqiKey = await db.getApiKey('waqi');
     if (aqiKey != null) {
       try {
-        final raw = decryptLocalKey(aqiKey.encryptedValue, fingerprint);
-        headers['X-Encrypted-Aqi-Key'] = encryptForProxy(raw, decryptionSecret);
+        final raw = await decryptLocalKey(aqiKey.encryptedValue, fingerprint);
+        headers['X-Encrypted-Aqi-Key'] = await encryptForProxy(raw, decryptionSecret);
       } catch (_) {}
     }
   }
@@ -114,82 +115,26 @@ Future<ProxyWeatherResponse?> _fetchProxy(Ref ref, String baseUrl, double lat, d
   });
   final res = await http.get(uri, headers: headers);
   if (res.statusCode != 200) return null;
-  return ProxyWeatherResponse.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  return Isolate.run(() => _parseProxyResponse(res.body));
 }
 
-Future<ProxyWeatherResponse?> _fetchDirect(Ref ref, double lat, double lon) async {
-  final db = ref.read(databaseServiceProvider);
-  final deviceService = ref.read(deviceServiceProvider);
-  final fingerprint = await deviceService.getHardwareFingerprint();
+ProxyWeatherResponse _parseProxyResponse(String body) {
+  return ProxyWeatherResponse.fromJson(jsonDecode(body) as Map<String, dynamic>);
+}
 
-  final weatherKey = await db.getApiKey('openweathermap');
-  if (weatherKey == null) return null;
-
-  String apiKey;
-  try {
-    apiKey = decryptLocalKey(weatherKey.encryptedValue, fingerprint);
-  } catch (_) {
-    return null;
-  }
-
-  final currentUri = Uri.parse('https://api.openweathermap.org/data/2.5/weather').replace(queryParameters: {
-    'lat': lat.toStringAsFixed(4),
-    'lon': lon.toStringAsFixed(4),
-    'units': 'metric',
-    'appid': apiKey,
-  });
-  final currentRes = await http.get(currentUri);
-  if (currentRes.statusCode != 200) return null;
-  final currentJson = jsonDecode(currentRes.body) as Map<String, dynamic>;
+ProxyWeatherResponse _parseDirectResponses(
+  String currentBody,
+  String forecastBody,
+  double uvIndex,
+  double lat,
+  double lon,
+  int aqiValue,
+) {
+  final currentJson = jsonDecode(currentBody) as Map<String, dynamic>;
   final main = currentJson['main'] as Map<String, dynamic>;
   final weatherList = currentJson['weather'] as List<dynamic>;
   final weather = weatherList.first as Map<String, dynamic>;
   final windJson = currentJson['wind'] as Map<String, dynamic>;
-
-  final forecastUri = Uri.parse('https://api.openweathermap.org/data/2.5/forecast').replace(queryParameters: {
-    'lat': lat.toStringAsFixed(4),
-    'lon': lon.toStringAsFixed(4),
-    'units': 'metric',
-    'appid': apiKey,
-  });
-  final forecastRes = await http.get(forecastUri);
-
-  double uvIndex = 0;
-  try {
-    final uvUri = Uri.parse('https://api.open-meteo.com/v1/forecast').replace(queryParameters: {
-      'latitude': lat.toStringAsFixed(4),
-      'longitude': lon.toStringAsFixed(4),
-      'daily': 'uv_index_max',
-      'timezone': 'auto',
-    });
-    final uvRes = await http.get(uvUri);
-    if (uvRes.statusCode == 200) {
-      final uvJson = jsonDecode(uvRes.body) as Map<String, dynamic>;
-      final daily = uvJson['daily'] as Map<String, dynamic>;
-      final values = daily['uv_index_max'] as List<dynamic>;
-      if (values.isNotEmpty) uvIndex = (values.first as num).toDouble();
-    }
-  } catch (_) {}
-
-  int aqiValue = 0;
-  final aqiKeyData = await db.getApiKey('waqi');
-  if (aqiKeyData != null) {
-    try {
-      final rawAqi = decryptLocalKey(aqiKeyData.encryptedValue, fingerprint);
-      final aqiUri = Uri.parse('https://api.waqi.info/feed/geo:$lat;$lon/').replace(queryParameters: {
-        'token': rawAqi,
-      });
-      final aqiRes = await http.get(aqiUri);
-      if (aqiRes.statusCode == 200) {
-        final aqiJson = jsonDecode(aqiRes.body) as Map<String, dynamic>;
-        if (aqiJson['status'] == 'ok') {
-          final data = aqiJson['data'] as Map<String, dynamic>;
-          final aqi = data['aqi'];
-          if (aqi != null) aqiValue = (aqi as num).toInt();
-        }
-      }
-    } catch (_) {}
-  }
 
   final condition = weather['main'] as String;
   final icon = weather['icon'] as String;
@@ -217,8 +162,102 @@ Future<ProxyWeatherResponse?> _fetchDirect(Ref ref, double lat, double lon) asyn
       dewPoint: _calculateDewPoint((main['temp'] as num).toDouble(), (main['humidity'] as num).toDouble()),
       msg: _humidityMessage((main['humidity'] as num).toDouble()),
     ),
-    forecast: _buildDirectForecast(forecastRes.statusCode == 200 ? jsonDecode(forecastRes.body) as Map<String, dynamic> : null),
+    forecast: _buildDirectForecast(jsonDecode(forecastBody) as Map<String, dynamic>),
   );
+}
+
+Future<ProxyWeatherResponse?> _fetchDirect(Ref ref, double lat, double lon) async {
+  final db = ref.read(databaseServiceProvider);
+  final deviceService = ref.read(deviceServiceProvider);
+  final fingerprint = await deviceService.getHardwareFingerprint();
+
+  final weatherKey = await db.getApiKey('openweathermap');
+  if (weatherKey == null) return null;
+
+  String apiKey;
+  try {
+    apiKey = await decryptLocalKey(weatherKey.encryptedValue, fingerprint);
+  } catch (_) {
+    return null;
+  }
+
+  final currentUri = Uri.parse('https://api.openweathermap.org/data/2.5/weather').replace(queryParameters: {
+    'lat': lat.toStringAsFixed(4),
+    'lon': lon.toStringAsFixed(4),
+    'units': 'metric',
+    'appid': apiKey,
+  });
+  final forecastUri = Uri.parse('https://api.openweathermap.org/data/2.5/forecast').replace(queryParameters: {
+    'lat': lat.toStringAsFixed(4),
+    'lon': lon.toStringAsFixed(4),
+    'units': 'metric',
+    'appid': apiKey,
+  });
+  final uvUri = Uri.parse('https://api.open-meteo.com/v1/forecast').replace(queryParameters: {
+    'latitude': lat.toStringAsFixed(4),
+    'longitude': lon.toStringAsFixed(4),
+    'daily': 'uv_index_max',
+    'timezone': 'auto',
+  });
+
+  final aqiKeyData = await db.getApiKey('waqi');
+  Future<String?> decryptAqiKey() async {
+    if (aqiKeyData == null) return null;
+    try {
+      return await decryptLocalKey(aqiKeyData.encryptedValue, fingerprint);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final results = await Future.wait([
+    http.get(currentUri),
+    http.get(forecastUri),
+    http.get(uvUri),
+    decryptAqiKey(),
+  ]);
+
+  final currentRes = results[0] as http.Response;
+  final forecastRes = results[1] as http.Response;
+  final uvRes = results[2] as http.Response;
+  final rawAqi = results[3] as String?;
+
+  if (currentRes.statusCode != 200) return null;
+
+  double uvIndex = 0;
+  if (uvRes.statusCode == 200) {
+    final uvJson = jsonDecode(uvRes.body) as Map<String, dynamic>;
+    final daily = uvJson['daily'] as Map<String, dynamic>;
+    final values = daily['uv_index_max'] as List<dynamic>;
+    if (values.isNotEmpty) uvIndex = (values.first as num).toDouble();
+  }
+
+  int aqiValue = 0;
+  if (rawAqi != null) {
+    try {
+      final aqiUri = Uri.parse('https://api.waqi.info/feed/geo:$lat;$lon/').replace(queryParameters: {
+        'token': rawAqi,
+      });
+      final aqiRes = await http.get(aqiUri);
+      if (aqiRes.statusCode == 200) {
+        final aqiJson = jsonDecode(aqiRes.body) as Map<String, dynamic>;
+        if (aqiJson['status'] == 'ok') {
+          final data = aqiJson['data'] as Map<String, dynamic>;
+          final aqi = data['aqi'];
+          if (aqi != null) aqiValue = (aqi as num).toInt();
+        }
+      }
+    } catch (_) {}
+  }
+
+  return Isolate.run(() => _parseDirectResponses(
+    currentRes.body,
+    forecastRes.body,
+    uvIndex,
+    lat,
+    lon,
+    aqiValue,
+  ));
 }
 
 String _owmIconToIllustration(String icon) {

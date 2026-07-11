@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as enc;
@@ -36,28 +37,34 @@ String _aesGcmDecrypt(String encryptedPayload, enc.Key key) {
   return encrypter.decrypt(encrypted, iv: iv);
 }
 
-// Encrypt keys using AES-256-GCM before storing in secure storage.
-// Key is derived from the device hardware fingerprint.
-String encryptLocalKey(String plainApiKey, String hardwareFingerprint) {
+String _encryptLocalKey(String plainApiKey, String hardwareFingerprint) {
   final keyBytes = deriveHardwareKey(hardwareFingerprint);
   return _aesGcmEncrypt(plainApiKey, enc.Key(keyBytes));
 }
 
-// Decrypt key on-device right before making an API call.
-String decryptLocalKey(String encryptedStoredKey, String hardwareFingerprint) {
+String _decryptLocalKey(String encryptedStoredKey, String hardwareFingerprint) {
   final keyBytes = deriveHardwareKey(hardwareFingerprint);
   return _aesGcmDecrypt(encryptedStoredKey, enc.Key(keyBytes));
 }
 
-// Encrypt an API key for transmission to the proxy server.
-// Uses the shared DECRYPTION_SECRET (32 bytes / 64 hex chars) that
-// the server uses to decrypt provider keys.
-String encryptForProxy(String plainApiKey, String decryptionSecretHex) {
+String _encryptForProxy(String plainApiKey, String decryptionSecretHex) {
   final keyBytes = _hexToBytes(decryptionSecretHex);
   if (keyBytes.length != 32) {
     throw Exception("Decryption secret must be 32 bytes (64 hex chars)");
   }
   return _aesGcmEncrypt(plainApiKey, enc.Key(Uint8List.fromList(keyBytes)));
+}
+
+Future<String> encryptLocalKey(String plainApiKey, String hardwareFingerprint) {
+  return Isolate.run(() => _encryptLocalKey(plainApiKey, hardwareFingerprint));
+}
+
+Future<String> decryptLocalKey(String encryptedStoredKey, String hardwareFingerprint) {
+  return Isolate.run(() => _decryptLocalKey(encryptedStoredKey, hardwareFingerprint));
+}
+
+Future<String> encryptForProxy(String plainApiKey, String decryptionSecretHex) {
+  return Isolate.run(() => _encryptForProxy(plainApiKey, decryptionSecretHex));
 }
 
 String _bytesToHex(List<int> bytes) =>

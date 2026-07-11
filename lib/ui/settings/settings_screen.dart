@@ -44,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final deviceService = ref.read(deviceServiceProvider);
       final fingerprint = await deviceService.getHardwareFingerprint();
-      final encrypted = encryptLocalKey(rawKey.trim(), fingerprint);
+      final encrypted = await encryptLocalKey(rawKey.trim(), fingerprint);
       final db = ref.read(databaseServiceProvider);
       await db.saveApiKey('openweathermap', encrypted);
       ref.invalidate(apiKeysProvider);
@@ -56,7 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final deviceService = ref.read(deviceServiceProvider);
       final fingerprint = await deviceService.getHardwareFingerprint();
-      final encrypted = encryptLocalKey(rawKey.trim(), fingerprint);
+      final encrypted = await encryptLocalKey(rawKey.trim(), fingerprint);
       final db = ref.read(databaseServiceProvider);
       await db.saveApiKey('waqi', encrypted);
       ref.invalidate(apiKeysProvider);
