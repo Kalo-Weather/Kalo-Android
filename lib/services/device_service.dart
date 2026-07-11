@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -41,7 +42,10 @@ class DeviceService {
     }
 
     // Append installation-specific secret as additional entropy
-    final storedEntropy = await _secureStorage.read(key: _fingerprintKey);
+    final storedEntropy = await _secureStorage.read(key: _fingerprintKey).timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => null,
+    );
     if (storedEntropy != null) {
       buffer.write(':');
       buffer.write(storedEntropy);
@@ -51,11 +55,17 @@ class DeviceService {
   }
 
   Future<void> ensureFingerprintEntropy() async {
-    final exists = await _secureStorage.containsKey(key: _fingerprintKey);
+    final exists = await _secureStorage.containsKey(key: _fingerprintKey).timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
     if (!exists) {
       // Generate a random installation ID bound to the platform keychain
       final uuid = _generateUuid();
-      await _secureStorage.write(key: _fingerprintKey, value: uuid);
+      await _secureStorage.write(key: _fingerprintKey, value: uuid).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {},
+      );
     }
   }
 

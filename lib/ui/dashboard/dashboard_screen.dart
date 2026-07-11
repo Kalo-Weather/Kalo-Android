@@ -466,7 +466,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: WeatherCard(
                     title: AppLocalizations.of(context).humidity,
                     icon: Icons.water_drop_outlined,
-                    content: HumidityCard(
+                    content: SymmetricalRaindropCard(
                       humidity: weather.humidity,
                       dewPoint: convertTemp(weather.temperature - ((100 - weather.humidity) / 5), unitPref),
                       dewPointUnit: tempUnit(unitPref),
@@ -1034,7 +1034,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Text(a.headline, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12)),
                       if (a.instruction != null && a.instruction!.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text('Instruction: ${a.instruction}', style: TextStyle(color: Colors.orange.shade200, fontSize: 12)),
+                        Text('${AppLocalizations.of(context).alertInstruction(a.instruction!)}', style: TextStyle(color: Colors.orange.shade200, fontSize: 12)),
                       ],
                     ],
                   );
