@@ -3,25 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:home_widget/home_widget.dart';
-import 'ui/onboarding/onboarding_screen.dart';
-import 'ui/dashboard/dashboard_screen.dart';
 import 'services/database_service.dart';
 import 'services/device_service.dart';
 import 'services/navigation_provider.dart';
-import 'services/proxy_config.dart';
 import 'services/config_status.dart';
-
 import 'services/notification_service.dart';
+import 'services/weather_service.dart';
+import 'services/proxy_config.dart';
 import 'services/update_service.dart';
 import 'services/widget_service.dart';
-import 'services/weather_service.dart';
-import 'services/background_service.dart';
-import 'ui/update/update_dialog.dart';
 import 'models/weather_condition.dart';
 import 'theme/app_theme.dart';
+import 'ui/dashboard/dashboard_screen.dart';
+import 'ui/onboarding/onboarding_screen.dart';
+import 'ui/update/update_dialog.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,22 +34,16 @@ void main() async {
   final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
 
   final deviceService = DeviceService();
-  await deviceService.ensureFingerprintEntropy();
+  try {
+    await deviceService.ensureFingerprintEntropy().timeout(const Duration(seconds: 5));
+  } catch (_) {}
 
   final notificationService = NotificationService();
-  await notificationService.init();
 
-  await BackgroundService.initialize();
-  await BackgroundService.schedulePeriodicRefresh();
-
-  final initialUnit = await _detectInitialUnit();
-  await prefs.setString('unit_preference', initialUnit);
-
+  final storedUnit = prefs.getString('unit_preference') ?? 'Celsius';
   final initialNowBar = prefs.getBool('nowBarEnabled') ?? false;
   final initialWidgetRefresh = prefs.getBool('widgetRefreshEnabled') ?? true;
   final initialTimeFormat = prefs.getString('time_format') ?? '24h';
-
-  HomeWidget.registerInteractivityCallback(WidgetService.widgetCallback);
 
   runApp(
     ProviderScope(
@@ -63,7 +53,7 @@ void main() async {
         deviceServiceProvider.overrideWithValue(deviceService),
         notificationServiceProvider.overrideWithValue(notificationService),
         configStatusProvider.overrideWith((ref) => envStatus),
-        unitPreferenceProvider.overrideWith((ref) => initialUnit),
+        unitPreferenceProvider.overrideWith((ref) => storedUnit),
         nowBarEnabledProvider.overrideWith((ref) => initialNowBar),
         widgetRefreshEnabledProvider.overrideWith((ref) => initialWidgetRefresh),
         timeFormatProvider.overrideWith((ref) => initialTimeFormat),
@@ -71,24 +61,6 @@ void main() async {
       child: const KaloApp(),
     ),
   );
-}
-
-const _fahrenheitCountries = {'US', 'BS', 'BZ', 'KY', 'PW', 'MH', 'FM', 'LR', 'MM'};
-
-Future<String> _detectInitialUnit() async {
-  try {
-    final permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low, timeLimit: Duration(seconds: 8)),
-      );
-      final placemarks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
-      if (placemarks.isNotEmpty && _fahrenheitCountries.contains(placemarks.first.isoCountryCode)) {
-        return 'Fahrenheit';
-      }
-    }
-  } catch (_) {}
-  return 'Celsius';
 }
 
 final onboardingCompletedProvider = StateProvider<bool>((ref) => false);
@@ -164,6 +136,8 @@ class _KaloAppState extends ConsumerState<KaloApp> {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: _ConfigErrorScreen(),
       );
     }
@@ -173,6 +147,8 @@ class _KaloAppState extends ConsumerState<KaloApp> {
         return MaterialApp(
           title: 'Kalo Weather',
           debugShowCheckedModeBanner: false,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue),

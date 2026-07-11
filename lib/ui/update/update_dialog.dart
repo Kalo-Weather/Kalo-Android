@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../services/update_service.dart';
 
@@ -74,7 +75,7 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
         children: [
           Icon(Icons.system_update, color: Colors.blue.shade300, size: 24),
           const SizedBox(width: 10),
-          Text('Update Available', style: TextStyle(color: KaloColors.primaryText, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).updateAvailable, style: TextStyle(color: KaloColors.primaryText, fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
       content: SizedBox(
@@ -108,18 +109,18 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
           const SizedBox(height: 6),
           Text(
             _state == _DialogState.ready
-                ? 'Download complete'
+                ? AppLocalizations.of(context).downloadComplete
                 : '${(_downloadProgress * 100).toStringAsFixed(0)}%',
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 12),
           ),
         ],
         if (_state == _DialogState.error) ...[
           const SizedBox(height: 12),
-          Text('Download failed: $_errorMessage', style: TextStyle(color: Colors.red.shade300, fontSize: 13)),
+          Text(AppLocalizations.of(context).downloadFailed(_errorMessage!), style: TextStyle(color: Colors.red.shade300, fontSize: 13)),
         ],
         if (widget.update.releaseNotes != null && widget.update.releaseNotes!.isNotEmpty && _state == _DialogState.available) ...[
           const SizedBox(height: 12),
-          Text('What\'s new', style: TextStyle(color: KaloColors.primaryText, fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(AppLocalizations.of(context).whatsNew, style: TextStyle(color: KaloColors.primaryText, fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Container(
             constraints: const BoxConstraints(maxHeight: 200),
@@ -141,12 +142,12 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
         return [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).later, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           FilledButton.icon(
             onPressed: _download,
             icon: const Icon(Icons.download, size: 18),
-            label: const Text('Download & Install'),
+            label: Text(AppLocalizations.of(context).downloadAndInstall),
             style: FilledButton.styleFrom(backgroundColor: Colors.blue.shade700),
           ),
         ];
@@ -157,19 +158,19 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
               _cancelToken?.cancel();
               Navigator.pop(context);
             },
-            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ];
       case _DialogState.ready:
         return [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).later, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           FilledButton.icon(
             onPressed: _install,
             icon: const Icon(Icons.download_done, size: 18),
-            label: const Text('Install'),
+            label: Text(AppLocalizations.of(context).install),
             style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
           ),
         ];
@@ -177,11 +178,11 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog> {
         return [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).close, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           TextButton(
             onPressed: _download,
-            child: Text('Retry', style: TextStyle(color: Colors.blue.shade300)),
+            child: Text(AppLocalizations.of(context).retry, style: TextStyle(color: Colors.blue.shade300)),
           ),
         ];
       case _DialogState.checking:

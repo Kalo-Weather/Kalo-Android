@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../services/weather_service.dart';
 import '../../services/location_service.dart';
@@ -60,7 +61,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final activeLocations = locations.isNotEmpty ? locations : null;
           final locationName = activeLocations != null && _currentLocationIndex < activeLocations.length
               ? activeLocations[_currentLocationIndex].name
-              : localityAsync.asData?.value ?? 'Current Location';
+              : localityAsync.asData?.value ?? AppLocalizations.of(context).currentLocation;
 
           if (paradigm == NavigationParadigm.locationCarousel) {
             return _buildCarousel(locationName, activeLocations, locations);
@@ -161,7 +162,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Expanded(
                 child: weatherAsync.when(
                   data: (weather) {
-                    if (weather == null) return _buildError('Could not load weather');
+                    if (weather == null) return _buildError(AppLocalizations.of(context).couldNotLoadWeather);
                     return RawScrollbar(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -272,7 +273,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 12),
           Container(width: 40, height: 4, decoration: BoxDecoration(color: KaloColors.secondaryText, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
-          Text('Saved Locations', style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).savedLocations, style: TextStyle(color: KaloColors.primaryText, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Flexible(
             child: ListView(
@@ -291,7 +292,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 8),
           ListTile(
             leading: const Icon(Icons.add_location, color: Colors.blue, size: 20),
-            title: const Text('Add Location', style: TextStyle(color: Colors.blue)),
+            title: Text(AppLocalizations.of(context).addLocation, style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(ctx);
               _addLocation();
@@ -345,8 +346,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         lng = position.longitude;
         final placemarks = await geo.placemarkFromCoordinates(lat, lng);
         name = placemarks.isNotEmpty
-            ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? 'Current Location')
-            : 'Current Location';
+            ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? AppLocalizations.of(context).currentLocation)
+            : AppLocalizations.of(context).currentLocation;
       } else {
         name = rName;
         lat = rLat;
@@ -430,7 +431,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 SizedBox(
                   width: cardWidth,
                   child: WeatherCard(
-                    title: 'UV Index',
+                    title: AppLocalizations.of(context).uvIndex,
                     icon: Icons.wb_sunny_outlined,
                     content: UVICard(uvIndex: weather.uvIndex),
                   ),
@@ -439,7 +440,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 SizedBox(
                   width: cardWidth,
                   child: WeatherCard(
-                    title: 'Air Quality',
+                    title: AppLocalizations.of(context).airQuality,
                     icon: Icons.air_outlined,
                     content: AQICard(airQuality: weather.aqi),
                   ),
@@ -450,7 +451,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SizedBox(
               width: constraints.maxWidth,
               child: WeatherCard(
-                title: 'Wind',
+                title: AppLocalizations.of(context).wind,
                 icon: Icons.air,
                 size: CardSize.wide,
                 content: WindCompassCard(wind: weather.wind),
@@ -463,7 +464,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 SizedBox(
                   width: cardWidth,
                   child: WeatherCard(
-                    title: 'Humidity',
+                    title: AppLocalizations.of(context).humidity,
                     icon: Icons.water_drop_outlined,
                     content: HumidityCard(
                       humidity: weather.humidity,
@@ -476,7 +477,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 SizedBox(
                   width: cardWidth,
                   child: WeatherCard(
-                    title: 'Real Feel',
+                    title: AppLocalizations.of(context).realFeel,
                     icon: Icons.thermostat,
                     content: RealFeelCard(
                       feelsLike: convertTemp(weather.apparentTemperature, unitPref),
@@ -527,7 +528,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Hourly Forecast', style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(AppLocalizations.of(context).hourlyForecast, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
           SizedBox(
             height: totalHeight,
@@ -562,7 +563,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           child: Column(
                             children: [
                               Text(
-                                isNow ? 'Now' : _formatHour(hour, timeFormat),
+                                isNow ? AppLocalizations.of(context).now : _formatHour(hour, timeFormat),
                                 style: TextStyle(
                                   color: isNow ? const Color(0xFFFF6B35) : KaloColors.secondaryText,
                                   fontSize: 10,
@@ -644,7 +645,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final frameAsync = ref.watch(radarFrameProvider);
     final frameUrl = frameAsync.asData?.value;
     return WeatherCard(
-      title: 'Radar',
+      title: AppLocalizations.of(context).radar,
       icon: Icons.radar,
       size: CardSize.wide,
       content: RadarCard(
@@ -684,14 +685,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('7-Day Forecast', style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(AppLocalizations.of(context).sevenDayForecast, style: TextStyle(color: KaloColors.secondaryText, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
           ...days.asMap().entries.map((entry) {
             final i = entry.key;
             final d = weather.dailyForecast[entry.value];
             final date = DateTime(d.time.year, d.time.month, d.time.day);
             final isToday = date == todayDate;
-            final dayLabel = isToday ? 'Today' : _dayAbbreviation(d.time.weekday);
+            final dayLabel = isToday ? AppLocalizations.of(context).today : _dayAbbreviation(d.time.weekday);
             final low = convertTemp(d.min, unitPref);
             final high = convertTemp(d.max, unitPref);
             final lowPos = ((d.min - globalMin) / range);
@@ -868,7 +869,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (hourly.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Hourly data unavailable', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
+              child: Text(AppLocalizations.of(context).hourlyDataUnavailable, style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
             ),
         ],
       ),
@@ -931,12 +932,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           const Icon(Icons.warning_amber, color: Colors.white, size: 16),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Proxy unavailable — using direct API fallback',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context).proxyUnavailable,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1001,7 +1002,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: Container(width: 40, height: 4, decoration: BoxDecoration(color: KaloColors.secondaryText, borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 16),
-            Text('Weather Alerts', style: TextStyle(color: KaloColors.primaryText, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context).weatherAlerts, style: TextStyle(color: KaloColors.primaryText, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Flexible(
               child: ListView.separated(
@@ -1081,15 +1082,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Icon(Icons.cloud_off, color: KaloColors.secondaryText, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Unable to load weather',
+              AppLocalizations.of(context).unableToLoadWeather,
               style: TextStyle(color: KaloColors.primaryText, fontSize: 18),
             ),
             const SizedBox(height: 8),
-            if (e.toString() == 'Could not load weather')
+            if (e.toString() == AppLocalizations.of(context).couldNotLoadWeather)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'Report issues at github.com/Kalo-Weather/Kalo-Android/issues',
+                  AppLocalizations.of(context).reportIssues,
                   style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
                 ),
               ),
@@ -1217,7 +1218,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
     return AlertDialog(
       backgroundColor: const Color(0xFF1A1A2E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text('Add Location', style: TextStyle(color: KaloColors.primaryText)),
+      title: Text(AppLocalizations.of(context).addLocationTitle, style: TextStyle(color: KaloColors.primaryText)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1227,7 +1228,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
             autofocus: true,
             style: TextStyle(color: KaloColors.primaryText),
             decoration: InputDecoration(
-              hintText: 'City name',
+              hintText: AppLocalizations.of(context).cityNameHint,
               hintStyle: TextStyle(color: KaloColors.secondaryText),
               filled: true,
               fillColor: KaloColors.frostWhite,
@@ -1256,7 +1257,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
                 Navigator.pop(context, (name: '', lat: 0, lng: 0, isCurrent: true));
               },
               icon: const Icon(Icons.gps_fixed, size: 18),
-              label: const Text('Use Current Location'),
+              label: Text(AppLocalizations.of(context).useCurrentLocation),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.1),
                 foregroundColor: Colors.white,
@@ -1297,7 +1298,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
           else if (_searched && !_loading && _results.isEmpty)
             Padding(
               padding: EdgeInsets.only(top: 12),
-              child: Text('No locations found', style: TextStyle(color: KaloColors.secondaryText, fontSize: 13)),
+              child: Text(AppLocalizations.of(context).noLocationsFound, style: TextStyle(color: KaloColors.secondaryText, fontSize: 13)),
             ),
         ],
       ),
@@ -1307,7 +1308,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
             _debounce?.cancel();
             Navigator.pop(context);
           },
-          child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+          child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
@@ -76,7 +77,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Stored encrypted on-device and sent securely to the proxy.',
+              AppLocalizations.of(context).keyEncryptedInfo,
               style: TextStyle(color: KaloColors.secondaryText, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -104,7 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -112,7 +113,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),
@@ -128,12 +129,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Proxy Server', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text(AppLocalizations.of(context).proxyServer, style: TextStyle(color: KaloColors.primaryText)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Use the public Kalo proxy or your own Vercel deployment.',
+              AppLocalizations.of(context).proxyDescription,
               style: TextStyle(color: KaloColors.secondaryText, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -145,7 +146,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Navigator.pop(ctx);
                 },
                 icon: const Icon(Icons.public, size: 18),
-                label: const Text('Use Public Proxy'),
+                label: Text(AppLocalizations.of(context).usePublicProxy),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
@@ -158,7 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Expanded(child: Divider(color: KaloColors.frostBorder)),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('OR', style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
+                  child: Text(AppLocalizations.of(context).or, style: TextStyle(color: KaloColors.secondaryText, fontSize: 11)),
                 ),
                 Expanded(child: Divider(color: KaloColors.frostBorder)),
               ],
@@ -187,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -195,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),
@@ -210,12 +211,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Add Location', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text(AppLocalizations.of(context).addLocationTitle, style: TextStyle(color: KaloColors.primaryText)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Search for a city or use your current location.',
+              AppLocalizations.of(context).addLocationDescription,
               style: TextStyle(color: KaloColors.secondaryText, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -223,7 +224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               controller: searchController,
               style: TextStyle(color: KaloColors.primaryText),
               decoration: InputDecoration(
-                hintText: 'City name',
+                hintText: AppLocalizations.of(context).cityNameHint,
                 hintStyle: TextStyle(color: KaloColors.secondaryText),
                 filled: true,
                 fillColor: KaloColors.frostWhite,
@@ -247,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _addCurrentLocation();
                 },
                 icon: const Icon(Icons.gps_fixed, size: 18),
-                label: const Text('Use Current Location'),
+                label: Text(AppLocalizations.of(context).useCurrentLocation),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
@@ -259,12 +260,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () => _searchAndAddLocation(searchController.text, ctx),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-            child: const Text('Search'),
+            child: Text(AppLocalizations.of(context).search),
           ),
         ],
       ),
@@ -330,8 +331,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       final placemarks = await geo.placemarkFromCoordinates(position.latitude, position.longitude);
       final name = placemarks.isNotEmpty
-          ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? 'Current Location')
-          : 'Current Location';
+          ? (placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea ?? AppLocalizations.of(context).currentLocation)
+          : AppLocalizations.of(context).currentLocation;
 
       final db = ref.read(databaseServiceProvider);
       await db.addLocation(name, position.latitude, position.longitude);
@@ -375,28 +376,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           icon: Icon(Icons.arrow_back, color: KaloColors.primaryText),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Settings', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text(AppLocalizations.of(context).settings, style: TextStyle(color: KaloColors.primaryText)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SectionHeader(title: 'Navigation'),
+          _SectionHeader(title: AppLocalizations.of(context).navigation),
           const SizedBox(height: 8),
           _buildChoiceChip(
-            label: 'Location Carousel',
-            subtitle: 'Swipe left/right to switch locations',
+            label: AppLocalizations.of(context).locationCarousel,
+            subtitle: AppLocalizations.of(context).locationCarouselSubtitle,
             selected: paradigm == NavigationParadigm.locationCarousel,
             onTap: () => ref.read(navigationParadigmProvider.notifier).state = NavigationParadigm.locationCarousel,
           ),
           const SizedBox(height: 8),
           _buildChoiceChip(
-            label: 'Stack View',
-            subtitle: 'Swipe up/down to switch locations',
+            label: AppLocalizations.of(context).stackView,
+            subtitle: AppLocalizations.of(context).stackViewSubtitle,
             selected: paradigm == NavigationParadigm.stackView,
             onTap: () => ref.read(navigationParadigmProvider.notifier).state = NavigationParadigm.stackView,
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Units'),
+          _SectionHeader(title: AppLocalizations.of(context).units),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -409,7 +410,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icon(Icons.thermostat_outlined, color: KaloColors.secondaryText, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('Temperature', style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
+                  child: Text(AppLocalizations.of(context).temperature, style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
                 ),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -417,9 +418,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icon(Icons.expand_more, color: KaloColors.secondaryText),
                     dropdownColor: const Color(0xFF1C1C2E),
                     style: TextStyle(color: KaloColors.primaryText, fontSize: 14),
-                    items: const [
-                      DropdownMenuItem(value: 'Celsius', child: Text('Celsius')),
-                      DropdownMenuItem(value: 'Fahrenheit', child: Text('Fahrenheit')),
+                    items: [
+                      DropdownMenuItem(value: 'Celsius', child: Text(AppLocalizations.of(context).celsius)),
+                      DropdownMenuItem(value: 'Fahrenheit', child: Text(AppLocalizations.of(context).fahrenheit)),
                     ],
                     onChanged: (val) async {
                       if (val != null) {
@@ -445,7 +446,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icon(Icons.access_time_outlined, color: KaloColors.secondaryText, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text('Time Format', style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
+                  child: Text(AppLocalizations.of(context).timeFormat, style: TextStyle(color: KaloColors.primaryText, fontSize: 15)),
                 ),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -453,9 +454,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icon(Icons.expand_more, color: KaloColors.secondaryText),
                     dropdownColor: const Color(0xFF1C1C2E),
                     style: TextStyle(color: KaloColors.primaryText, fontSize: 14),
-                    items: const [
-                      DropdownMenuItem(value: '24h', child: Text('24-hour')),
-                      DropdownMenuItem(value: '12h', child: Text('12-hour')),
+                    items: [
+                      DropdownMenuItem(value: '24h', child: Text(AppLocalizations.of(context).timeFormat24h)),
+                      DropdownMenuItem(value: '12h', child: Text(AppLocalizations.of(context).timeFormat12h)),
                     ],
                     onChanged: (val) async {
                       if (val != null) {
@@ -470,27 +471,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Display'),
+          _SectionHeader(title: AppLocalizations.of(context).display),
           const SizedBox(height: 8),
           _buildToggleTile(
             icon: Icons.animation_outlined,
-            label: 'Animated Background',
-            subtitle: 'Weather animations on dashboard (disable if laggy)',
+            label: AppLocalizations.of(context).animatedBackground,
+            subtitle: AppLocalizations.of(context).animatedBackgroundSubtitle,
             value: ref.watch(animatedBackgroundProvider),
             onChanged: (val) => ref.read(animatedBackgroundProvider.notifier).set(val),
           ),
           const SizedBox(height: 8),
           _buildTile(
             icon: Icons.dashboard_customize_outlined,
-            label: 'Customize Widgets',
-            subtitle: 'Drag, reorder, and toggle blocks per widget size',
+            label: AppLocalizations.of(context).customizeWidgets,
+            subtitle: AppLocalizations.of(context).customizeWidgetsSubtitle,
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WidgetEditorScreen())),
           ),
           const SizedBox(height: 8),
           _buildToggleTile(
             icon: Icons.widgets_outlined,
-            label: 'Auto-Refresh Widgets',
-            subtitle: 'Update widgets when weather refreshes',
+            label: AppLocalizations.of(context).autoRefreshWidgets,
+            subtitle: AppLocalizations.of(context).autoRefreshWidgetsSubtitle,
             value: ref.watch(widgetRefreshEnabledProvider),
             onChanged: (val) async {
               ref.read(widgetRefreshEnabledProvider.notifier).state = val;
@@ -501,8 +502,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
           _buildToggleTile(
             icon: Icons.lock_outline,
-            label: 'Now Bar (One UI 6+)',
-            subtitle: 'Show weather on Samsung lock screen Now Bar',
+            label: AppLocalizations.of(context).nowBar,
+            subtitle: AppLocalizations.of(context).nowBarSubtitle,
             value: ref.watch(nowBarEnabledProvider),
             onChanged: (val) async {
               ref.read(nowBarEnabledProvider.notifier).state = val;
@@ -511,31 +512,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'API Keys'),
+          _SectionHeader(title: AppLocalizations.of(context).apiKeys),
           const SizedBox(height: 8),
           apiKeysAsync.when(
             data: (keys) => Column(
               children: [
                 _buildApiKeyTile(
                   icon: Icons.cloud_outlined,
-                  label: 'OpenWeatherMap',
+                  label: AppLocalizations.of(context).openWeatherMap,
                   hasKey: keys.any((k) => k.provider == 'openweathermap'),
                   onTap: () => _showApiKeyDialog(
                     'openweathermap',
-                    'OpenWeatherMap API Key',
-                    'Enter your API key',
+                    AppLocalizations.of(context).openWeatherMapKeyTitle,
+                    AppLocalizations.of(context).enterApiKey,
                     _saveWeatherKey,
                   ),
                 ),
                 const SizedBox(height: 8),
                 _buildApiKeyTile(
                   icon: Icons.air_outlined,
-                  label: 'WAQI (Air Quality)',
+                  label: AppLocalizations.of(context).waqiAirQuality,
                   hasKey: keys.any((k) => k.provider == 'waqi'),
                   onTap: () => _showApiKeyDialog(
                     'waqi',
-                    'WAQI API Key',
-                    'Enter your API key',
+                    AppLocalizations.of(context).waqiKeyTitle,
+                    AppLocalizations.of(context).enterApiKey,
                     _saveAqiKey,
                   ),
                 ),
@@ -548,40 +549,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             error: (_, __) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Proxy Server'),
+          _SectionHeader(title: AppLocalizations.of(context).proxyServer),
           const SizedBox(height: 8),
           _buildTile(
             icon: Icons.dns_outlined,
-            label: 'Server URL',
+            label: AppLocalizations.of(context).serverUrl,
             subtitle: proxyUrl,
             onTap: _showProxyDialog,
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Updates'),
+          _SectionHeader(title: AppLocalizations.of(context).updates),
           const SizedBox(height: 8),
           _buildTile(
             icon: Icons.system_update_outlined,
-            label: 'Check for Updates',
+            label: AppLocalizations.of(context).checkForUpdates,
             subtitle: 'v$currentAppVersion',
             onTap: _checkForUpdates,
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Saved Locations'),
+          _SectionHeader(title: AppLocalizations.of(context).savedLocationsSection),
           const SizedBox(height: 8),
           locationsAsync.when(
             data: (locations) => Column(
               children: [
                 _buildTile(
                   icon: Icons.add_location_outlined,
-                  label: 'Add Location',
-                  subtitle: 'Search city or use current location',
+                  label: AppLocalizations.of(context).addLocation,
+                  subtitle: AppLocalizations.of(context).addLocationSubtitle,
                   onTap: _showAddLocationDialog,
                 ),
                 const SizedBox(height: 8),
                 if (locations.isEmpty)
                   Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No saved locations', style: TextStyle(color: KaloColors.secondaryText)),
+                    child: Text(AppLocalizations.of(context).noSavedLocations, style: TextStyle(color: KaloColors.secondaryText)),
                   )
                 else
                   ...locations.map((loc) => Padding(
@@ -632,7 +633,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
               child: Text(
-                hasKey ? 'Set' : 'Not set',
+                hasKey ? AppLocalizations.of(context).apiKeyStatusSet : AppLocalizations.of(context).apiKeyStatusNotSet,
                 style: TextStyle(
                   color: hasKey ? Colors.green : KaloColors.secondaryText,
                   fontSize: 11,
@@ -820,13 +821,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Rename Location', style: TextStyle(color: KaloColors.primaryText)),
+        title: Text(AppLocalizations.of(context).renameLocation, style: TextStyle(color: KaloColors.primaryText)),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: TextStyle(color: KaloColors.primaryText),
           decoration: InputDecoration(
-            hintText: 'Location name',
+            hintText: AppLocalizations.of(context).locationNameHint,
             hintStyle: TextStyle(color: KaloColors.secondaryText),
             filled: true,
             fillColor: KaloColors.frostWhite,
@@ -844,12 +845,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).cancel, style: TextStyle(color: KaloColors.secondaryText)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),

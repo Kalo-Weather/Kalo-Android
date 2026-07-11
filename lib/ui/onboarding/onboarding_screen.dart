@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../theme/app_theme.dart';
@@ -64,7 +65,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       const Spacer(),
                       TextButton(
                         onPressed: _completeOnboarding,
-                        child: Text('Skip', style: TextStyle(color: KaloColors.secondaryText)),
+                        child: Text(AppLocalizations.of(context).skip, style: TextStyle(color: KaloColors.secondaryText)),
                       ),
                     ],
                   ),
@@ -105,7 +106,7 @@ class _WelcomeStep extends StatelessWidget {
           const BoxedIcon(WeatherIcons.day_sunny, size: 150, color: Colors.white),
           const SizedBox(height: 32),
           Text(
-            'Kalo Weather',
+            AppLocalizations.of(context).kaloWeather,
             style: TextStyle(
               color: KaloColors.primaryText,
               fontSize: 36,
@@ -114,7 +115,7 @@ class _WelcomeStep extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Beautiful weather tracking with privacy at its core.\nNo ads. No trackers. Just weather.',
+            AppLocalizations.of(context).onboardingWelcomeSubtitle,
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 16, height: 1.5),
             textAlign: TextAlign.center,
           ),
@@ -125,7 +126,7 @@ class _WelcomeStep extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-              child: const Text('Get Started', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(AppLocalizations.of(context).getStarted, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -170,12 +171,12 @@ class _PrivacyStepState extends ConsumerState<_PrivacyStep> {
           Icon(Icons.privacy_tip_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
           Text(
-            'Your Privacy Matters',
+            AppLocalizations.of(context).yourPrivacyMatters,
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
-            'Kalo has zero telemetry, no ads, and no trackers.\nYour data stays on your device.',
+            AppLocalizations.of(context).privacyDescription,
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
           ),
@@ -191,13 +192,13 @@ class _PrivacyStepState extends ConsumerState<_PrivacyStep> {
                       width: 20, height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                     )
-                  : const Text('Grant Location Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  : Text(AppLocalizations.of(context).grantLocationAccess, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: widget.onNext,
-            child: Text('Maybe Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).maybeLater, style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ],
       ),
@@ -220,12 +221,12 @@ class _KeyCreationStep extends ConsumerWidget {
           Icon(Icons.vpn_key_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
           Text(
-            'Your Private Key',
+            AppLocalizations.of(context).yourPrivateKey,
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
-            'Kalo generates a unique encryption key tied to your device.\nYour API keys are encrypted locally and never leave your phone.',
+            AppLocalizations.of(context).keyDescription,
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
           ),
@@ -236,7 +237,7 @@ class _KeyCreationStep extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-              child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(AppLocalizations.of(context).continueAction, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -260,12 +261,12 @@ class _ApiSelectionStep extends StatelessWidget {
           Icon(Icons.api_outlined, color: KaloColors.primaryText, size: 80),
           const SizedBox(height: 24),
           Text(
-            'Weather Data Source',
+            AppLocalizations.of(context).weatherDataSource,
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
-            'Use the free Open-Meteo API with no key needed, or add your own API keys for additional providers.',
+            AppLocalizations.of(context).dataSourceDescription,
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
           ),
@@ -276,13 +277,13 @@ class _ApiSelectionStep extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-              child: const Text('Use Free API', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(AppLocalizations.of(context).useFreeApi, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: onNext,
-            child: Text('Configure Later', style: TextStyle(color: KaloColors.secondaryText)),
+            child: Text(AppLocalizations.of(context).configureLater, style: TextStyle(color: KaloColors.secondaryText)),
           ),
         ],
       ),
@@ -305,27 +306,27 @@ class _GestureCustomizationStep extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Choose Your Navigation',
+            AppLocalizations.of(context).chooseYourNavigation,
             style: TextStyle(color: KaloColors.primaryText, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
-            'How would you like to navigate through locations and weather data?',
+            AppLocalizations.of(context).navigationDescription,
             style: TextStyle(color: KaloColors.secondaryText, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
           _ParadigmOption(
-            title: 'Location Carousel',
-            description: 'Swipe left/right to switch locations\nScroll up/down for weather details',
+            title: AppLocalizations.of(context).locationCarousel,
+            description: AppLocalizations.of(context).locationCarouselDescription,
             icon: Icons.swap_horiz,
             selected: currentParadigm == NavigationParadigm.locationCarousel,
             onTap: () => ref.read(navigationParadigmProvider.notifier).state = NavigationParadigm.locationCarousel,
           ),
           const SizedBox(height: 16),
           _ParadigmOption(
-            title: 'Stack View',
-            description: 'Swipe left/right for weather cards\nScroll up/down to switch locations',
+            title: AppLocalizations.of(context).stackView,
+            description: AppLocalizations.of(context).stackViewDescription,
             icon: Icons.view_carousel,
             selected: currentParadigm == NavigationParadigm.stackView,
             onTap: () => ref.read(navigationParadigmProvider.notifier).state = NavigationParadigm.stackView,
@@ -337,7 +338,7 @@ class _GestureCustomizationStep extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: onComplete,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-              child: const Text('Start Using Kalo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(AppLocalizations.of(context).startUsingKalo, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
