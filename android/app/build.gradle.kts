@@ -19,7 +19,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
+        isCoreLibraryDesugaringEnabled = gradle.startParameter.taskNames.none { it.contains("Release") }
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -30,6 +30,23 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    flavorDimensions += "default"
+    productFlavors {
+        create("phone") {
+            dimension = "default"
+            isDefault = true
+        }
+        create("wear") {
+            dimension = "default"
+            applicationIdSuffix = ".wear"
+            minSdk = 30
+        }
     }
 
     signingConfigs {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_service.dart';
 import 'services/device_service.dart';
 import 'services/weather_service.dart';
 import 'services/location_service.dart';
 import 'services/navigation_provider.dart';
+import 'services/proxy_config.dart';
 import 'models/weather_condition.dart';
 import 'weather_icons/weather_icons.dart';
 import 'weather_icons/boxed_icon.dart';
@@ -20,13 +22,19 @@ void main() async {
   final dbService = await DatabaseService.init();
 
   final deviceService = DeviceService();
-  await deviceService.ensureFingerprintEntropy();
+  try {
+    await deviceService.ensureFingerprintEntropy().timeout(const Duration(seconds: 5));
+  } catch (_) {}
+
+  final prefs = await SharedPreferences.getInstance();
+  final storedUnit = prefs.getString('unit_preference') ?? 'Celsius';
 
   runApp(
     ProviderScope(
       overrides: [
         databaseServiceProvider.overrideWithValue(dbService),
         deviceServiceProvider.overrideWithValue(deviceService),
+        unitPreferenceProvider.overrideWith((ref) => storedUnit),
       ],
       child: const KaloWearApp(),
     ),
@@ -58,10 +66,13 @@ class WearDashboard extends ConsumerStatefulWidget {
 }
 
 class _WearDashboardState extends ConsumerState<WearDashboard> {
-  int _retryTrigger = 0;
+  @override
+  void initState() {
+    super.initState();
+    ref.read(proxyBaseUrlProvider.notifier).load();
+  }
 
   void _retry() {
-    setState(() => _retryTrigger++);
     ref.invalidate(currentWeatherProvider);
     ref.invalidate(currentPositionProvider);
   }
@@ -72,6 +83,11 @@ class _WearDashboardState extends ConsumerState<WearDashboard> {
     final localityAsync = ref.watch(currentLocalityProvider);
     final unitPref = ref.watch(unitPreferenceProvider);
 
+    final size = MediaQuery.of(context).size;
+    final isRound = size.width == size.height;
+    final screenRadius = size.width / 2;
+    final safePadding = isRound ? screenRadius * 0.22 : 16.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       body: SafeArea(
@@ -80,7 +96,7 @@ class _WearDashboardState extends ConsumerState<WearDashboard> {
             if (weather == null) return _buildError();
             final locationName = localityAsync.asData?.value ?? 'Current Location';
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: safePadding, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -31,30 +31,36 @@ class WeatherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FrostedGlass(
-      padding: const EdgeInsets.all(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: KaloColors.secondaryText, size: 14),
-                const SizedBox(width: 6),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: KaloColors.secondaryText,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+      padding: const EdgeInsets.all(16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          splashColor: Colors.white10,
+          highlightColor: Colors.white10,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: KaloColors.secondaryText, size: 13),
+                  const SizedBox(width: 5),
+                  Text(
+                    title.toUpperCase(),
+                    style: TextStyle(
+                      color: KaloColors.secondaryText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Center(child: content),
-          ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Center(child: content),
+            ],
+          ),
         ),
       ),
     );

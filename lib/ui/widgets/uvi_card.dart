@@ -36,7 +36,7 @@ class UVICard extends StatelessWidget {
                     '${uvIndex.value.toInt()}',
                     style: TextStyle(
                       color: KaloColors.primaryText,
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -47,6 +47,7 @@ class UVICard extends StatelessWidget {
                       color: _colorForLabel(uvIndex.label),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -54,7 +55,7 @@ class UVICard extends StatelessWidget {
                     uvIndex.protectionTip,
                     style: TextStyle(
                       color: KaloColors.secondaryText,
-                      fontSize: 9,
+                      fontSize: 10,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
@@ -102,7 +103,7 @@ class _UVSemiCirclePainter extends CustomPainter {
     final bgPaint = Paint()
       ..color = KaloColors.frostWhite
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6;
+      ..strokeWidth = 8;
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, -math.pi, false, bgPaint);
 
     final fillPaint = Paint()
@@ -110,7 +111,7 @@ class _UVSemiCirclePainter extends CustomPainter {
         colors: [Colors.green, Colors.yellow, Colors.orange, Colors.red, Colors.purple],
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
+      ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(Rect.fromCircle(center: center, radius: radius), math.pi, -math.pi * progress, false, fillPaint);
   }
